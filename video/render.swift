@@ -5,7 +5,11 @@ import WebKit
 import AVFoundation
 import CoreVideo
 
-let W = 1920, H = 1080, FPS = 30, DUR = 38.0
+let env = ProcessInfo.processInfo.environment
+let W = 1920, H = 1080, FPS = 30
+let DUR = Double(env["CHITTER_DUR"] ?? "") ?? 38.0
+let NARRATION = env["CHITTER_NARRATION"]
+let BELLS = env["CHITTER_BELLS"] != "0"
 let args = CommandLine.arguments
 let html = URL(fileURLWithPath: args[1]), out = URL(fileURLWithPath: args[2])
 
@@ -15,7 +19,8 @@ func makeAudio(to url: URL) {
     var L = [Float](repeating: 0, count: n), R = L
     let chords: [[Double]] = [[220.0, 261.63, 329.63], [174.61, 220.0, 261.63], [196.0, 261.63, 329.63], [196.0, 246.94, 293.66]]
     let bar = 4.75
-    for b in 0..<8 {
+    let musicGain: Float = NARRATION == nil ? 1 : 0.55      // duck the music under a voiceover
+    for b in 0..<Int((DUR / bar).rounded(.up)) {
         let ch = chords[b % 4], t0 = Double(b) * bar
         for (k, f) in ch.enumerated() {
             for i in 0..<Int(bar * sr + sr) {
@@ -25,7 +30,7 @@ func makeAudio(to url: URL) {
                 let ph = 2 * Double.pi * f * t
                 let v = Float(env * 0.045 * (sin(ph) + 0.35 * sin(2 * ph) + 0.12 * sin(3 * ph)))
                 let pan = Float(k - 1) * 0.25
-                L[idx] += v * (1 - max(0, pan)); R[idx] += v * (1 + min(0, pan))
+                L[idx] += musicGain * v * (1 - max(0, pan)); R[idx] += musicGain * v * (1 + min(0, pan))
             }
         }
     }
@@ -37,7 +42,13 @@ func makeAudio(to url: URL) {
             L[idx] += v; R[idx] += v
         }
     }
-    for (t, f) in [(1.0, 880.0), (2.3, 659.25), (5.2, 784.0), (8.6, 784.0), (13.6, 659.25), (16.6, 880.0), (19.4, 987.77), (22.2, 1174.66), (26.3, 659.25), (28.0, 880.0), (31.2, 784.0), (33.7, 1318.5), (34.8, 880.0)] { bell(t, f) }
+    if BELLS { for (t, f) in [(1.0, 880.0), (2.3, 659.25), (5.2, 784.0), (8.6, 784.0), (13.6, 659.25), (16.6, 880.0), (19.4, 987.77), (22.2, 1174.66), (26.3, 659.25), (28.0, 880.0), (31.2, 784.0), (33.7, 1318.5), (34.8, 880.0)] { bell(t, f) } }
+    if let path = NARRATION, let nf = try? AVAudioFile(forReading: URL(fileURLWithPath: path)),
+       let nb = AVAudioPCMBuffer(pcmFormat: nf.processingFormat, frameCapacity: AVAudioFrameCount(nf.length)) {
+        try? nf.read(into: nb)
+        let ch = nb.floatChannelData![0]
+        for i in 0..<min(Int(nb.frameLength), n) { L[i] += ch[i] * 1.0; R[i] += ch[i] * 1.0 }
+    }
     let fmt = AVAudioFormat(standardFormatWithSampleRate: sr, channels: 2)!
     let buf = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: AVAudioFrameCount(n))!
     buf.frameLength = AVAudioFrameCount(n)
