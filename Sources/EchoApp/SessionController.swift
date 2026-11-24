@@ -3,6 +3,8 @@ import EchoCore
 import EchoAudio
 import EchoASR
 import EchoUI
+import EchoLang
+import EchoNet
 
 /// Wires capture → resample → ASR → ribbon (+ transcript). Later phases extend this with
 /// language ID, translation, records and notes.
@@ -15,6 +17,10 @@ final class SessionController: ObservableObject {
     @Published var lines: [Segment] = []
 
     private let tap = SystemAudioTap()
+    private let translators = TranslatorChain([])
+    private var langDetector: AudioLanguageDetector?
+    private var detectedLanguage: String?
+    private var lastPartialTranslate = Date.distantPast
     private var engine: ASREngine?
     private var consumer: Task<Void, Never>?
     private var feeder: FileFeeder?
@@ -27,32 +33,87 @@ final class SessionController: ObservableObject {
     func start(fixture: URL? = nil) async {
         guard !isListening else { return }
         status = "Starting…"; onStateChange?()
-        let engine = ASRFactory.makeDefault()
-        self.engine = engine
-        do {
-            try await engine.start(locale: Locale.current)
-        } catch {
-            status = "\(error)"; onStateChange?(); return
+        await configureTranslators()
+        let auto = Prefs.sourceLanguage == "auto"
+        let code = auto ? "en" : Prefs.sourceLanguage
+        var gate: LanguageGate?
+        if auto {
+            let det = AudioLanguageDetector()
+            do { try await det.prepare(); langDetector = det } catch { langDetector = nil }
+            if langDetector != nil { gate = LanguageGate(neededSeconds: 3) }
         }
+        let engine = ASRFactory.make(preferWhisper: Prefs.preferWhisper)
+        self.engine = engine
+        ribbonModel.accessibilityMode = Prefs.accessibilityMode
         started = Date(); lines = []
         ribbon.present()
-        let sink: @Sendable ([Float]) -> Void = { [weak engine] s in engine?.append(s) }
+
+        let startEngine: (String) async -> Bool = { [weak self] c in
+            guard let self else { return false }
+            let locale = await self.locale(for: c)
+            self.detectedLanguage = c
+            do { try await engine.start(locale: locale) } catch { self.status = "\(error)"; self.onStateChange?(); return false }
+            self.consumer = Task { [weak self] in for await r in engine.results { await self?.handle(r) } }
+            return true
+        }
+        if gate == nil { guard await startEngine(code) else { return } }
+
+        let detector = langDetector
+        let gateRef = gate
+        let sink: @Sendable ([Float]) -> Void = { [weak engine] s in
+            if let gate = gateRef {
+                gate.add(s) { buffered in
+                    Task {
+                        let r = await detector?.detect(buffered, candidates: ["en", "es", "zh", "ja", "fr", "ko", "de", "pt", "it", "ru"])
+                        let code = r?.language ?? "en"
+                        if await startEngine(code) { gate.release { engine?.append($0) } }
+                    }
+                }
+            } else { engine?.append(s) }
+        }
         do {
             if let fixture { feeder = try FileFeeder(url: fixture); feeder?.start(onChunk: sink) }
             else { try tap.start(onSamples: sink) }
-        } catch {
-            status = "\(error)"; onStateChange?(); return
-        }
+        } catch { status = "\(error)"; onStateChange?(); return }
         isListening = true; status = "Listening…"; onStateChange?()
-        consumer = Task { [weak self] in
-            for await r in engine.results { await self?.handle(r) }
+    }
+
+    private func locale(for code: String) async -> Locale {
+        #if compiler(>=6.2)
+        if #available(macOS 26, *), !Prefs.preferWhisper, let l = await AppleSpeechEngine.supportedLocale(for: code) { return l }
+        #endif
+        return Locale(identifier: code)
+    }
+
+    private func configureTranslators() async {
+        var chain: [Translator] = []
+        #if compiler(>=6.2)
+        if #available(macOS 26, *) { chain.append(AppleTranslator()) }
+        #endif
+        if await OpenAIClient.isReachable(.ollama) {
+            chain.append(LLMTranslator(endpoint: .ollama, apiKey: { nil }))
         }
+        await translators.setTranslators(chain)
     }
 
     private func handle(_ r: ASRResult) {
         let id = lines.count + 1
+        let lang = r.language ?? detectedLanguage
         ribbonModel.show(original: r.text, translation: nil, speaker: 0, isFinal: r.isFinal)
-        if r.isFinal { lines.append(Segment(id: id, start: r.start, end: r.end, text: r.text, language: r.language)) }
+        let target = Prefs.targetLanguage
+        let wantsTranslation = lang.map { Lang.base($0) != Lang.base(target) } ?? false
+        if r.isFinal {
+            lines.append(Segment(id: id, start: r.start, end: r.end, text: r.text, language: lang))
+        }
+        guard wantsTranslation, r.isFinal || Date().timeIntervalSince(lastPartialTranslate) > 1.2 else { return }
+        if !r.isFinal { lastPartialTranslate = Date() }
+        Task { [weak self] in
+            guard let self, let t = await self.translators.translate(r.text, from: lang, to: target) else { return }
+            await MainActor.run {
+                self.ribbonModel.setTranslation(t)
+                if r.isFinal, let i = self.lines.firstIndex(where: { $0.id == id }) { self.lines[i].translation = t }
+            }
+        }
     }
 
     func stop() {
@@ -65,4 +126,30 @@ final class SessionController: ObservableObject {
     }
 
     func toggleRibbon() { ribbon.isPresented ? ribbon.dismiss() : ribbon.present() }
+}
+
+
+/// Buffers the first few seconds of speech so the spoken language can be identified before ASR starts.
+final class LanguageGate: @unchecked Sendable {
+    private var buffer: [Float] = []
+    private var fired = false, released = false
+    private let needed: Int
+    private let lock = NSLock()
+    init(neededSeconds: Double) { needed = Int(neededSeconds * 16_000) }
+
+    func add(_ s: [Float], onReady: ([Float]) -> Void) {
+        lock.lock()
+        if released { lock.unlock(); return }
+        buffer += s
+        var ready: [Float]?
+        if !fired && buffer.count >= needed && EnergyVAD.rms(Array(buffer.suffix(16_000))) > 0.003 || (!fired && buffer.count >= needed * 4) {
+            fired = true; ready = buffer
+        }
+        lock.unlock()
+        if let ready { onReady(ready) }
+    }
+    func release(feed: ([Float]) -> Void) {
+        lock.lock(); let b = buffer; buffer = []; released = true; lock.unlock()
+        feed(b)
+    }
 }

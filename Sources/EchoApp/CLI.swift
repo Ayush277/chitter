@@ -2,6 +2,7 @@ import Foundation
 import EchoCore
 import EchoAudio
 import EchoASR
+import EchoLang
 
 /// Headless modes used by scripts/bench.sh and the phase checks.
 /// `Chitter --transcribe <wav> [--whisper] [--lang en] [--model base] [--fast]`
@@ -17,6 +18,31 @@ enum CLI {
         let (n, peak, nonSilent) = counter.snapshot()
         let out: [String: Any] = ["requested_seconds": secs, "captured_seconds": Double(n) / 16_000, "peak": peak, "non_silent_seconds": Double(nonSilent) / 16_000]
         print(String(decoding: try! JSONSerialization.data(withJSONObject: out, options: [.sortedKeys]), as: UTF8.self))
+        return 0
+    }
+
+    /// `Chitter --detect-language <wav>`
+    static func detectLanguage(_ args: [String]) async -> Int32 {
+        guard let i = args.firstIndex(of: "--detect-language"), i + 1 < args.count else { return 2 }
+        do {
+            let samples = Array(try AudioFile.loadSamples(url: URL(fileURLWithPath: args[i + 1])).prefix(16_000 * 5))
+            let d = AudioLanguageDetector(); try await d.prepare()
+            let t0 = Date(); let r = await d.detect(samples, candidates: ["en", "es", "zh", "ja", "fr", "ko", "de", "pt", "it", "ru"])
+            print("{\"language\":\"\(r?.language ?? "?")\",\"probability\":\(r?.probability ?? 0),\"seconds\":\(Date().timeIntervalSince(t0))}")
+            return 0
+        } catch { print("error: \(error)"); return 1 }
+    }
+
+    /// `Chitter --translate "text" <from> <to>`
+    static func translate(_ args: [String]) async -> Int32 {
+        guard let i = args.firstIndex(of: "--translate"), i + 3 < args.count else { return 2 }
+        #if compiler(>=6.2)
+        if #available(macOS 26, *) {
+            let st = await AppleTranslator.status(from: args[i + 2], to: args[i + 3])
+            print("pair status: \(st)")
+            do { print(try await AppleTranslator().translate(args[i + 1], from: args[i + 2], to: args[i + 3])) } catch { print("error: \(error)") }
+        }
+        #endif
         return 0
     }
 

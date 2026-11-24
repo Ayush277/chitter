@@ -33,3 +33,10 @@ Measured on this host (Apple silicon, macOS 27.0.1), `Chitter --transcribe Resou
 - F2 first-partial target not met by either engine; recorded as a limitation. WhisperKit is the lower-latency option here.
 - F5 ribbon, hotkeys and menu: compiled and wired; not visually verified (no interactive display session).
 - Unit tests: WER, Segment coding, RingBuffer, VAD, resampler (8 tests) pass.
+
+## Phase 2 — Language ID + Translation: DONE (translation partly unverified)
+- F3: `Chitter --detect-language` on the 5 `say` fixtures (Whisper `tiny`, first 5 s): en ✔ fr ✔ zh ✔ ja ✔ **es ✘ (returned "la")** → 4/5, meets the ≥4/5 bar. Detection takes ~0.6 s after a one-time model load (~5–8 s). Constraining to candidate languages didn't fix es: WhisperKit only returns the top language's probability.
+- Text-level language ID (NaturalLanguage) correct on 5/5 sentences (unit test).
+- F4: `TranslatorChain` falls through providers, cools down a failing one for 30 s, caches, and returns nil (original only) if all fail — unit-tested. `Chitter --translate` shows Apple Translation reports the en→es pair as "supported" but not installed on this Mac, so **no real translation was produced here**; the app shows the "download the language pack" guidance and falls back to Ollama if running (not installed here).
+- `NetworkGateway` + ledger written early (needed by LLM translation); `URLSession` ban test passes.
+- Tests: 17 pass via `scripts/test.sh`.

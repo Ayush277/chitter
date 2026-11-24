@@ -22,6 +22,11 @@ public final class AppleSpeechEngine: ASREngine, @unchecked Sendable {
         cont = c
     }
 
+    /// Nearest Apple-supported locale for a language code such as "zh" or "en".
+    public static func supportedLocale(for code: String) async -> Locale? {
+        await SpeechTranscriber.supportedLocale(equivalentTo: Locale(identifier: code))
+    }
+
     public static func isLocaleSupported(_ locale: Locale) async -> Bool {
         let supported = await SpeechTranscriber.supportedLocales
         return supported.contains { $0.identifier(.bcp47) == locale.identifier(.bcp47) }

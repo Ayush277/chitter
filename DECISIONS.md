@@ -8,3 +8,4 @@
 2026-11-24 | SpeechAnalyzer engine gated by #if compiler(>=6.2) + @available(macOS 26) | SwiftPM has no SDK-version flag; compiler version tracks the SDK
 2026-11-24 | Global hotkeys via Carbon RegisterEventHotKey | Needs no Input Monitoring permission
 2026-11-24 | WhisperKit added as dependency (MIT) | Spec §3.2 fallback ASR for macOS 14.4-25
+2026-11-24 | scripts/test.sh retries swift test up to 3x | Command Line Tools' swift-build intermittently fails to load TestingMacros for whichever test targets were rebuilt; a retry succeeds (not a code problem)

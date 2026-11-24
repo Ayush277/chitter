@@ -23,8 +23,9 @@ let package = Package(
             dependencies: ["EchoCore", "EchoAudio", "EchoASR", "EchoLang", "EchoNotes", "EchoVoice", "EchoNet", "EchoUI"]),
         .testTarget(name: "EchoCoreTests", dependencies: ["EchoCore"]),
         .testTarget(name: "EchoAudioTests", dependencies: ["EchoAudio"]),
+        .testTarget(name: "EchoLangTests", dependencies: ["EchoLang"]),
         .testTarget(name: "EchoNotesTests", dependencies: ["EchoNotes", "EchoCore"]),
-        .testTarget(name: "EchoNetTests", dependencies: ["EchoNet"]),
+        .testTarget(name: "EchoNetTests", dependencies: ["EchoNet", "EchoCore"]),
         .testTarget(name: "EchoUITests", dependencies: ["EchoUI"]),
     ],
     swiftLanguageModes: [.v5]

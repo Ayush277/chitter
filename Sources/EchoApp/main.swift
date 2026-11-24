@@ -10,6 +10,14 @@ if CommandLine.arguments.contains("--capture-test") {
     exit(await CLI.captureTest(CommandLine.arguments))
 }
 
+if CommandLine.arguments.contains("--detect-language") {
+    exit(await CLI.detectLanguage(CommandLine.arguments))
+}
+
+if CommandLine.arguments.contains("--translate") {
+    exit(await CLI.translate(CommandLine.arguments))
+}
+
 let app = NSApplication.shared
 let delegate = AppDelegate()
 app.delegate = delegate
