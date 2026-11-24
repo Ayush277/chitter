@@ -20,7 +20,10 @@ public enum Tokens {
     public static let ink = Hex(0x14162B), woad = Hex(0x1F2447)
     public static let linen = Hex(0xF3EDE2), bone = Hex(0xE6DDCC)
     public static let textDark = Hex(0x1C1B26), textLight = Hex(0xECE6D8)
-    public static let madder = Hex(0xD9503F), weld = Hex(0xE9B53A), verdigris = Hex(0x2E9C8E)
+    public static let madder = Hex(0xD9503F), weld = Hex(0xE9B53A), verdigris = Hex(0x31A092)   // nudged from #2E9C8E so it passes AA on woad (4.47 → ≥4.5)
+    /// Verdigris darkened for text on light surfaces (linen/bone) — the base tone is only 2.9:1 there.
+    public static let verdigrisDeep = Hex(0x1B6B60)
+    public static func translationText(dark: Bool) -> Hex { dark ? verdigris : verdigrisDeep }
     public static let lichen = Hex(0x8FA66A), mulberry = Hex(0x8E4A7A), indigoDye = Hex(0x4A5BB8)
 
     /// Speaker thread order (spec §4.3). Never rely on colour alone: pair with `speakerInitial`.

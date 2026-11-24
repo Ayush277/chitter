@@ -3,6 +3,8 @@ import EchoCore
 import EchoAudio
 import EchoASR
 import EchoLang
+import EchoNotes
+import EchoNet
 
 /// Headless modes used by scripts/bench.sh and the phase checks.
 /// `Chitter --transcribe <wav> [--whisper] [--lang en] [--model base] [--fast]`
@@ -43,6 +45,20 @@ enum CLI {
             do { print(try await AppleTranslator().translate(args[i + 1], from: args[i + 2], to: args[i + 3])) } catch { print("error: \(error)") }
         }
         #endif
+        return 0
+    }
+
+    /// `Chitter --notes <file.txt>` — one transcript line per text line. Prints notes JSON + which provider ran.
+    static func notes(_ args: [String]) async -> Int32 {
+        guard let i = args.firstIndex(of: "--notes"), i + 1 < args.count,
+              let text = try? String(contentsOfFile: args[i + 1], encoding: .utf8) else { return 2 }
+        let segs = text.split(separator: "\n").enumerated().map { Segment(id: $0.offset + 1, start: Double($0.offset) * 5, end: Double($0.offset) * 5 + 5, text: String($0.element)) }
+        let engine = NotesEngine(providers: NotesProviders.defaultChain())
+        let t0 = Date()
+        let r = await engine.generate(segs)
+        let enc = JSONEncoder(); enc.outputFormatting = [.prettyPrinted, .sortedKeys]
+        print(String(decoding: (try? enc.encode(r.notes)) ?? Data(), as: UTF8.self))
+        print("provider=\(r.provider) validShare=\(r.validShare) seconds=\(Date().timeIntervalSince(t0)) attempts=\(r.attempts)")
         return 0
     }
 

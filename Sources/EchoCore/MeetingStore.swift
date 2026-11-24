@@ -97,6 +97,13 @@ public final class MeetingHandle: @unchecked Sendable {
         return byID.values.sorted { $0.id < $1.id }
     }
 
+    /// Writes notes.json + notes.md with user-only permissions.
+    public func saveNotes(json: Data, markdown: String) {
+        try? json.write(to: notesJSONURL, options: .atomic)
+        try? markdown.write(to: notesURL, atomically: true, encoding: .utf8)
+        for u in [notesJSONURL, notesURL] { try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: u.path) }
+    }
+
     public func finish(at date: Date = Date()) {
         lock.lock(); try? writer?.close(); writer = nil; lock.unlock()
         update { $0.endedAt = date }

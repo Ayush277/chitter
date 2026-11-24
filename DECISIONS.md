@@ -8,4 +8,6 @@
 2026-11-24 | SpeechAnalyzer engine gated by #if compiler(>=6.2) + @available(macOS 26) | SwiftPM has no SDK-version flag; compiler version tracks the SDK
 2026-11-24 | Global hotkeys via Carbon RegisterEventHotKey | Needs no Input Monitoring permission
 2026-11-24 | WhisperKit added as dependency (MIT) | Spec §3.2 fallback ASR for macOS 14.4-25
-2026-11-24 | scripts/test.sh retries swift test up to 3x | Command Line Tools' swift-build intermittently fails to load TestingMacros for whichever test targets were rebuilt; a retry succeeds (not a code problem)
+2026-11-24 | UI avoids @State (SwiftUI macro plugin missing from Command Line Tools); view state lives in ObservableObjects | build would fail with 'SwiftUIMacros not found'
+2026-11-24 | Package.swift passes -plugin-path to the swift-testing macro plugins when the Command Line Tools dir exists | Fixes the intermittent 'TestingMacros not found' failure for good; scripts/test.sh keeps a retry loop as a safety net
+2026-11-24 | verdigris nudged to #31A092 and added verdigris-deep #1B6B60 for light-surface text | Contrast test (spec §4.3 rule) showed #2E9C8E at 4.47 on woad and 2.9 on linen

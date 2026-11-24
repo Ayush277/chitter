@@ -48,3 +48,11 @@ Measured on this host (Apple silicon, macOS 27.0.1), `Chitter --transcribe Resou
 - F13: gateway + ledger tests; `noURLSessionOutsideEchoNet` test passes.
 - F14: Keychain wrapper round-trip tested. F17: `ScreenShareSafety.apply` ready; applied when the Notes window is built (Phase 4).
 - Tests: 28 pass.
+
+## Phase 4 — Notes + Pull the Thread: DONE (visuals unverified)
+- F8 (real run): `Chitter --notes` on the 3-line sample transcript used **Apple's on-device model** with zero keys (13 s), validShare = 1.0 (every decision/action cited existing lines). Ollama isn't installed here, so that branch is only unit-tested with a mock.
+- Chain behaviour unit-tested: unavailable provider skipped, failing provider falls through, all-fail → extractive, one JSON repair retry, map-reduce keeps line IDs, invalid `lines` dropped.
+- End to end in the real app (`Chitter.app --sample`): bundled sample plays through ASR → meeting folder (`transcript.jsonl`, `notes.json`, `notes.md`) with notes citing real line IDs. Files are 0600.
+- F9 Pull the Thread: hover/click/pin logic unit-tested; thread (250 ms ease-out, instant under Reduced Motion), scroll-to-line, keyboard focus → same highlight, ⌘F search are implemented. **The Notes window was never seen on screen** (screencapture has no display permission here), so layout and animation are unverified.
+- Contrast test (spec §4.3 rule) caught two token failures; fixed (see DECISIONS).
+- Tests: 34 pass.

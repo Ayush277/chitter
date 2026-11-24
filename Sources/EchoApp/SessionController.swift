@@ -5,6 +5,7 @@ import EchoASR
 import EchoUI
 import EchoLang
 import EchoNet
+import EchoNotes
 
 /// Wires capture → resample → ASR → ribbon (+ transcript). Later phases extend this with
 /// language ID, translation, records and notes.
@@ -30,17 +31,26 @@ final class SessionController: ObservableObject {
     private(set) var meeting: MeetingHandle?
     private var lastSpeech = Date()
     private var watchdog: Task<Void, Never>?
+    let notesEngine = NotesEngine(providers: NotesProviders.defaultChain())
+    private var notesTask: Task<Void, Never>?
+    private var notesLineCount = 0
+    private var forcedLanguage: String?
+    lazy var notesVM = NotesViewModel(store: store, index: index,
+        engineLabel: { [notesEngine] in await notesEngine.activeProviderName() },
+        generate: { [notesEngine] in await notesEngine.generate($0) })
+    lazy var notesWindow = NotesWindowController(vm: notesVM)
 
     var onStateChange: (() -> Void)?
 
     func toggleListening() { if isListening { stop() } else { Task { await start() } } }
 
-    func start(fixture: URL? = nil) async {
+    func start(fixture: FileFeeder? = nil, language: String? = nil) async {
         guard !isListening else { return }
         status = "Starting…"; onStateChange?()
         await configureTranslators()
-        let auto = Prefs.sourceLanguage == "auto"
-        let code = auto ? "en" : Prefs.sourceLanguage
+        forcedLanguage = language
+        let auto = language == nil && Prefs.sourceLanguage == "auto"
+        let code = language ?? (auto ? "en" : Prefs.sourceLanguage)
         var gate: LanguageGate?
         if auto {
             let det = AudioLanguageDetector()
@@ -87,10 +97,43 @@ final class SessionController: ObservableObject {
             } else { engine?.append(s) }
         }
         do {
-            if let fixture { feeder = try FileFeeder(url: fixture); feeder?.start(onChunk: sink) }
+            if let fixture { feeder = fixture; fixture.start(onChunk: sink, onDone: { [weak self] in Task { @MainActor in self?.sampleFinished() } }) }
             else { try tap.start(onSamples: sink) }
         } catch { status = "\(error)"; onStateChange?(); return }
         isListening = true; status = "Listening…"; onStateChange?()
+        notesLineCount = 0
+        notesTask = Task { [weak self] in   // live notes: roughly every 60 s of new speech
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 60_000_000_000)
+                await self?.writeNotes()
+            }
+        }
+    }
+
+    /// F18: plays the bundled sample meeting through the real pipeline.
+    func playSample() async {
+        guard !isListening else { return }
+        let dir = Bundle.main.resourceURL?.appendingPathComponent("Fixtures")
+            ?? URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent("Resources/Fixtures")
+        var samples: [Float] = []
+        for n in ["sample1", "sample2", "sample3"] {
+            guard let s = try? AudioFile.loadSamples(url: dir.appendingPathComponent("\(n).wav")) else { continue }
+            samples += s + [Float](repeating: 0, count: 16_000)
+        }
+        guard !samples.isEmpty else { status = "Sample audio is missing from this build."; onStateChange?(); return }
+        await start(fixture: FileFeeder(samples: samples), language: "en")
+        if let id = meeting?.info.id { notesWindow.show(selecting: id) }
+    }
+
+    private func sampleFinished() {
+        Task { try? await Task.sleep(nanoseconds: 4_000_000_000); if isListening { stop() } }
+    }
+
+    func writeNotes() async {
+        guard let m = meeting, lines.count > notesLineCount || !lines.isEmpty else { return }
+        notesLineCount = lines.count
+        let r = await notesEngine.generate(lines)
+        if let data = try? JSONEncoder().encode(r.notes) { m.saveNotes(json: data, markdown: NotesValidator.markdown(r.notes)) }
     }
 
     private func locale(for code: String) async -> Locale {
@@ -138,12 +181,16 @@ final class SessionController: ObservableObject {
         let e = engine
         Task { await e?.finish() }
         consumer?.cancel()
-        watchdog?.cancel()
+        watchdog?.cancel(); notesTask?.cancel()
         if let m = meeting {
             m.finish()
             index?.index(meetingID: m.info.id, segments: m.loadSegments())
             let id = m.info.id
-            Task { await NetworkGateway.shared.setMeeting(nil); _ = id }
+            Task { @MainActor in
+                await self.writeNotes()                       // final notes at meeting end
+                await NetworkGateway.shared.setMeeting(nil)
+                self.notesVM.reloadList(); if self.notesVM.selectedID == id { self.notesVM.load() }
+            }
         }
         ribbon.dismiss()
         isListening = false; status = "Idle"; onStateChange?()

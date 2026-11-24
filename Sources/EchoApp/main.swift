@@ -18,6 +18,10 @@ if CommandLine.arguments.contains("--translate") {
     exit(await CLI.translate(CommandLine.arguments))
 }
 
+if CommandLine.arguments.contains("--notes") {
+    exit(await CLI.notes(CommandLine.arguments))
+}
+
 let app = NSApplication.shared
 let delegate = AppDelegate()
 app.delegate = delegate
