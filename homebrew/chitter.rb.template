@@ -1,0 +1,18 @@
+cask "chitter" do
+  version "__VERSION__"
+  sha256 "__SHA256__"
+
+  url "https://github.com/__OWNER__/chitter/releases/download/v#{version}/Chitter-#{version}.dmg"
+  name "Chitter"
+  desc "Live subtitles, interpreting and meeting notes for Mac"
+  homepage "https://github.com/__OWNER__/chitter"
+
+  depends_on macos: ">= :sonoma"
+
+  app "Chitter.app"
+
+  zap trash: [
+    "~/Library/Application Support/Chitter",
+    "~/Library/Preferences/app.chitter.mac.plist",
+  ]
+end

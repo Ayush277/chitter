@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import AVFoundation
 @testable import EchoVoice
 
 @Test func installerChecksumIsPinnedAndVerified() throws {
@@ -26,4 +27,23 @@ import Foundation
 @Test func ttsProducesAudioBuffers() async {
     let bufs = await SpeechPlayer().synthesize("Hello from Chitter", language: "en-US")
     #expect(!bufs.isEmpty && bufs.reduce(0) { $0 + Int($1.frameLength) } > 4_000)
+}
+
+@Test func dubQueueSpeaksFasterWhenBehindButCapsIt() {
+    #expect(DubQueue.rate(forBacklog: 0) == DubQueue.rate(forBacklog: 1))
+    #expect(DubQueue.rate(forBacklog: 3) > DubQueue.rate(forBacklog: 1))
+    #expect(DubQueue.rate(forBacklog: 50) <= 0.65)
+}
+@Test func dubQueueDropsOldestWhenFarBehind() async {
+    let q = DubQueue()
+    await q.stop()
+    for i in 0..<10 { await q.enqueue("Line \(i)", language: "en-US") }
+    #expect(await q.dropped >= 6)                   // maxBacklog is 3, so older lines are dropped, never spoken late
+    await q.stop()
+}
+@Test func picksTheBestInstalledVoice() {
+    let v = SpeechPlayer.bestVoice(for: "en-US")
+    #expect(v != nil)
+    let all = AVSpeechSynthesisVoice.speechVoices().filter { $0.language == "en-US" }
+    if let v, let top = all.map(\.quality.rawValue).max() { #expect(v.quality.rawValue >= top || !v.language.hasPrefix("en")) }
 }

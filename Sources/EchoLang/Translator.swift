@@ -105,3 +105,23 @@ public actor TranslatorChain {
         return nil   // decision table: show original only
     }
 }
+
+#if compiler(>=6.2) && canImport(FoundationModels)
+import FoundationModels
+
+/// Translation with Apple's on-device language model: free, private, and needs no downloaded language packs
+/// (uses the same model as the notes). Slower and less polished than a dedicated translator, so it sits after Apple Translation.
+@available(macOS 26, *)
+public struct AppleModelTranslator: Translator {
+    public let name = "Apple on-device model"
+    public init() {}
+    public func translate(_ text: String, from: String?, to: String) async throws -> String {
+        guard SystemLanguageModel.default.availability == .available else { throw TranslationError.unavailable("Apple Intelligence isn't available.") }
+        let target = Lang.displayName(to, in: Locale(identifier: "en"))
+        let session = LanguageModelSession(instructions: "You are a live interpreter. Translate the user's text into \(target). Reply with only the translation: no quotes, no notes, no explanation.")
+        let out = try await session.respond(to: text).content.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !out.isEmpty else { throw TranslationError.unavailable("Empty translation") }
+        return out
+    }
+}
+#endif

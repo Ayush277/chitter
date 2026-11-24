@@ -23,6 +23,8 @@ public enum ASRFactory {
         #endif
         return WhisperKitEngine(model: whisperModel)
     }
+    /// Per-utterance language detection: right for calls where different people speak different languages.
+    public static func makeMultilingual(whisperModel: String = "base") -> ASREngine { WhisperKitEngine(model: whisperModel, autodetect: true) }
     public static func make(preferWhisper: Bool, whisperModel: String = "base") -> ASREngine {
         preferWhisper ? WhisperKitEngine(model: whisperModel) : makeDefault(whisperModel: whisperModel)
     }

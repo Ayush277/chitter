@@ -23,3 +23,14 @@ struct Upper: Translator { let name = "upper"; func translate(_ t: String, from:
     for (code, text) in samples { #expect(TextLanguageID.detect(text)?.language.hasPrefix(code) == true) }
 }
 @Test func langBase() { #expect(Lang.base("zh-Hans") == "zh"); #expect(Lang.base("en_US") == "en") }
+
+#if compiler(>=6.2) && canImport(FoundationModels)
+@available(macOS 26, *)
+@Test func appleModelTranslatorTranslatesWhenAvailable() async throws {
+    // Runs only where Apple Intelligence is enabled; otherwise it must fail cleanly so the chain falls through.
+    do {
+        let out = try await AppleModelTranslator().translate("Buenos días a todos", from: "es", to: "en")
+        #expect(out.lowercased().contains("good morning") || out.lowercased().contains("hello"))
+    } catch is TranslationError { /* unavailable here: fine, chain moves on */ }
+}
+#endif

@@ -2,6 +2,7 @@ import Foundation
 import EchoCore
 import EchoAudio
 import WhisperKit
+import NaturalLanguage
 
 /// Pseudo-streaming Whisper: re-decodes the growing current utterance about once a second (partials),
 /// and emits a final when the energy VAD detects an utterance end or the utterance reaches 25 s.
@@ -21,8 +22,11 @@ public final class WhisperKitEngine: ASREngine, @unchecked Sendable {
     private var decoding = false
     private var pending: Task<Void, Never>?
 
-    public init(model: String = "base") {
-        self.model = model
+    private let autodetect: Bool
+
+    /// `autodetect: true` lets Whisper identify the language of every utterance (mixed-language calls).
+    public init(model: String = "base", autodetect: Bool = false) {
+        self.model = model; self.autodetect = autodetect
         self.name = "WhisperKit (\(model))"
         var c: AsyncStream<ASRResult>.Continuation!
         results = AsyncStream { c = $0 }
@@ -30,7 +34,7 @@ public final class WhisperKitEngine: ASREngine, @unchecked Sendable {
     }
 
     public func start(locale: Locale) async throws {
-        language = locale.language.languageCode?.identifier
+        language = autodetect ? nil : locale.language.languageCode?.identifier
         var cfg = WhisperKitConfig(model: model)
         cfg.verbose = false
         cfg.logLevel = .none
@@ -84,18 +88,36 @@ public final class WhisperKitEngine: ASREngine, @unchecked Sendable {
         let r = (utterance, utteranceStart); utterance = []; return r
     }
 
-    private func decode(_ audio: [Float], start: TimeInterval, final: Bool) async {
-        guard let pipe, audio.count > 4_000 else { return }
+    /// Languages Whisper "detects" by mistake on real call audio (Spanish → Latin is the classic one).
+    static let implausible: Set<String> = ["la", "nn", "sn", "yo", "haw", "mi", "ln", "jw", "su", "br", "oc", "gl", "tl", "mg", "ba", "tt"]
+    static let candidates = ["es", "pt", "it", "fr", "de", "en"]
+
+    private func decodeOnce(_ audio: [Float], language: String?) async -> (text: String, language: String?)? {
+        guard let pipe else { return nil }
         var opts = DecodingOptions()
         opts.language = language
         opts.detectLanguage = language == nil
         opts.withoutTimestamps = true
         opts.skipSpecialTokens = true
-        guard let res = try? await pipe.transcribe(audioArray: audio, decodeOptions: opts).first else { return }
-        let text = res.text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return }
-        cont.yield(ASRResult(text: text, isFinal: final, start: start,
-                             end: start + Double(audio.count) / 16_000, language: res.language))
+        guard let res = try? await pipe.transcribe(audioArray: audio, decodeOptions: opts).first else { return nil }
+        return (res.text.trimmingCharacters(in: .whitespacesAndNewlines), res.language)
+    }
+
+    private func decode(_ audio: [Float], start: TimeInterval, final: Bool) async {
+        guard pipe != nil, audio.count > 4_000, var best = await decodeOnce(audio, language: language) else { return }
+        // Auto-detect safeguard: if the detected language is implausible, retry the likely ones and keep the text
+        // that actually reads as its language.
+        if autodetect, final, let l = best.language, Self.implausible.contains(l) {
+            var bestScore = -1.0
+            for cand in Self.candidates {
+                guard let r = await decodeOnce(audio, language: cand), !r.text.isEmpty else { continue }
+                let rec = NLLanguageRecognizer(); rec.processString(r.text)
+                let score = rec.languageHypotheses(withMaximum: 5)[NLLanguage(cand)] ?? 0
+                if score > bestScore { bestScore = score; best = (r.text, cand) }
+            }
+        }
+        guard !best.text.isEmpty else { return }
+        cont.yield(ASRResult(text: best.text, isFinal: final, start: start, end: start + Double(audio.count) / 16_000, language: best.language))
     }
 
     public func finish() async {

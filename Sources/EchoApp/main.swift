@@ -26,6 +26,18 @@ if CommandLine.arguments.contains("--interpret-test") {
     exit(await CLI.interpretTest(CommandLine.arguments))
 }
 
+if CommandLine.arguments.contains("--soak") {
+    exit(await CLI.soak(CommandLine.arguments))
+}
+
+if CommandLine.arguments.contains("--detect-calls") {
+    exit(CLI.detectCalls())
+}
+
+if CommandLine.arguments.contains("--dub-test") {
+    exit(await CLI.dubTest(CommandLine.arguments))
+}
+
 let app = NSApplication.shared
 let delegate = AppDelegate()
 app.delegate = delegate

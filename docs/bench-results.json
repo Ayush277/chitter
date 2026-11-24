@@ -1,0 +1,34 @@
+{
+  "apple": {
+    "audio_seconds": 11.52,
+    "engine": "Apple SpeechAnalyzer",
+    "first_result_seconds": 4.183107972145081,
+    "language": "en-US",
+    "load_seconds": 0.33292996883392334,
+    "text": "Welcome everyone to the weekly planning meeting.  Today we will review the launch schedule and decide who owns each task.  Maria will send the budget report by Friday.  We agreed to move the release to the 1st of March.",
+    "wall_seconds": 12.44272494316101,
+    "wer": 0.02564102564102564,
+    "real_time_factor": 1.08009765131606
+  },
+  "whisper": {
+    "audio_seconds": 11.52,
+    "engine": "WhisperKit (base)",
+    "first_result_seconds": 2.0418779850006104,
+    "language": "en",
+    "load_seconds": 13.671262979507446,
+    "text": "Welcome everyone to the weekly planning meeting. Today we will review the launch schedule and decide who owns each task. Maria will send the budget report by Friday. We agreed to move the release to the 1st of March.",
+    "wall_seconds": 12.616798043251038,
+    "wer": 0.02564102564102564,
+    "real_time_factor": 1.0952081634766526
+  },
+  "cold_start_median_s": 0.07314109802246094,
+  "app_size_mb": 9.796875,
+  "soak": {
+    "engine": "Apple SpeechAnalyzer",
+    "seconds": 1800,
+    "finals": 584,
+    "avg_cpu_pct": 0.870950812197048,
+    "peak_rss_mb": 22.78125,
+    "rss_growth_pct": -54.36036036036036
+  }
+}

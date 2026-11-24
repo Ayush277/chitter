@@ -1,6 +1,7 @@
 import AppKit
 import EchoCore
 import EchoAudio
+import EchoVoice
 import EchoASR
 import EchoUI
 import EchoLang
@@ -20,7 +21,7 @@ final class SessionController: ObservableObject {
     private let tap = SystemAudioTap()
     let translators = TranslatorChain([])
     lazy var interpreter = Interpreter(translators: translators)
-    private var langDetector: AudioLanguageDetector?
+    let dub = DubQueue()
     private var detectedLanguage: String?
     private var lastPartialTranslate = Date.distantPast
     private var engine: ASREngine?
@@ -45,24 +46,22 @@ final class SessionController: ObservableObject {
 
     func toggleListening() { if isListening { stop() } else { Task { await start() } } }
 
-    func start(fixture: FileFeeder? = nil, language: String? = nil) async {
+    private(set) var autoStarted = false
+
+    func start(fixture: FileFeeder? = nil, language: String? = nil, title: String = "Meeting", auto: Bool = false) async {
         guard !isListening else { return }
+        autoStarted = auto
         status = "Starting…"; onStateChange?()
         await configureTranslators()
         forcedLanguage = language
         let auto = language == nil && Prefs.sourceLanguage == "auto"
         let code = language ?? (auto ? "en" : Prefs.sourceLanguage)
-        var gate: LanguageGate?
-        if auto {
-            let det = AudioLanguageDetector()
-            do { try await det.prepare(); langDetector = det } catch { langDetector = nil }
-            if langDetector != nil { gate = LanguageGate(neededSeconds: 3) }
-        }
-        let engine = ASRFactory.make(preferWhisper: Prefs.preferWhisper)
+        // Auto language = Whisper detects the language of every utterance, so a call can switch languages mid-way.
+        let engine = auto ? ASRFactory.makeMultilingual() : ASRFactory.make(preferWhisper: Prefs.preferWhisper)
         self.engine = engine
         ribbonModel.accessibilityMode = Prefs.accessibilityMode
         started = Date(); lines = []; lastSpeech = Date()
-        meeting = try? store.create(title: "Meeting", sourceLanguage: Prefs.sourceLanguage == "auto" ? nil : Prefs.sourceLanguage,
+        meeting = try? store.create(title: title, sourceLanguage: Prefs.sourceLanguage == "auto" ? nil : Prefs.sourceLanguage,
                                     targetLanguage: Prefs.targetLanguage)
         await NetworkGateway.shared.setMeeting(meeting?.info.id)
         watchdog = Task { [weak self] in   // auto-end after N minutes without speech (default 10)
@@ -82,21 +81,9 @@ final class SessionController: ObservableObject {
             self.consumer = Task { [weak self] in for await r in engine.results { await self?.handle(r) } }
             return true
         }
-        if gate == nil { guard await startEngine(code) else { return } }
+        guard await startEngine(code) else { return }
 
-        let detector = langDetector
-        let gateRef = gate
-        let sink: @Sendable ([Float]) -> Void = { [weak engine] s in
-            if let gate = gateRef {
-                gate.add(s) { buffered in
-                    Task {
-                        let r = await detector?.detect(buffered, candidates: ["en", "es", "zh", "ja", "fr", "ko", "de", "pt", "it", "ru"])
-                        let code = r?.language ?? "en"
-                        if await startEngine(code) { gate.release { engine?.append($0) } }
-                    }
-                }
-            } else { engine?.append(s) }
-        }
+        let sink: @Sendable ([Float]) -> Void = { [weak engine] s in engine?.append(s) }
         do {
             if let fixture { feeder = fixture; fixture.start(onChunk: sink, onDone: { [weak self] in Task { @MainActor in self?.sampleFinished() } }) }
             else { try tap.start(onSamples: sink) }
@@ -149,7 +136,7 @@ final class SessionController: ObservableObject {
     private func configureTranslators() async {
         var chain: [Translator] = []
         #if compiler(>=6.2)
-        if #available(macOS 26, *) { chain.append(AppleTranslator()) }
+        if #available(macOS 26, *) { chain.append(AppleTranslator()); chain.append(AppleModelTranslator()) }
         #endif
         if await OpenAIClient.isReachable(.ollama) {
             chain.append(LLMTranslator(endpoint: .ollama, apiKey: { nil }))
@@ -172,6 +159,7 @@ final class SessionController: ObservableObject {
         if !r.isFinal { lastPartialTranslate = Date() }
         Task { [weak self] in
             guard let self, let t = await self.translators.translate(r.text, from: lang, to: target) else { return }
+            if r.isFinal && Prefs.dubForeignSpeech { await self.dub.enqueue(t, language: target) }
             await MainActor.run {
                 self.ribbonModel.setTranslation(t)
                 if r.isFinal, let i = self.lines.firstIndex(where: { $0.id == id }) { self.lines[i].translation = t; self.meeting?.append(self.lines[i]) }
@@ -185,6 +173,7 @@ final class SessionController: ObservableObject {
         Task { await e?.finish() }
         consumer?.cancel()
         watchdog?.cancel(); notesTask?.cancel()
+        Task { await dub.stop() }
         if let m = meeting {
             m.finish()
             index?.index(meetingID: m.info.id, segments: m.loadSegments())
@@ -199,31 +188,14 @@ final class SessionController: ObservableObject {
         isListening = false; status = "Idle"; onStateChange?()
     }
 
+    /// A call began in some app or browser (CallWatcher). Start unless the user is already listening.
+    func callStarted(_ info: CallInfo) {
+        guard Prefs.autoStartOnCalls, !isListening else { return }
+        let f = DateFormatter(); f.dateFormat = "d MMM HH:mm"
+        Task { await start(title: "\(info.app.replacingOccurrences(of: " (browser call)", with: "")) call \(f.string(from: Date()))", auto: true) }
+    }
+    /// The call's mic has been closed for the grace period. Only auto-started sessions are ended automatically.
+    func callEnded() { if isListening && autoStarted { stop() } }
+
     func toggleRibbon() { ribbon.isPresented ? ribbon.dismiss() : ribbon.present() }
-}
-
-
-/// Buffers the first few seconds of speech so the spoken language can be identified before ASR starts.
-final class LanguageGate: @unchecked Sendable {
-    private var buffer: [Float] = []
-    private var fired = false, released = false
-    private let needed: Int
-    private let lock = NSLock()
-    init(neededSeconds: Double) { needed = Int(neededSeconds * 16_000) }
-
-    func add(_ s: [Float], onReady: ([Float]) -> Void) {
-        lock.lock()
-        if released { lock.unlock(); return }
-        buffer += s
-        var ready: [Float]?
-        if !fired && buffer.count >= needed && EnergyVAD.rms(Array(buffer.suffix(16_000))) > 0.003 || (!fired && buffer.count >= needed * 4) {
-            fired = true; ready = buffer
-        }
-        lock.unlock()
-        if let ready { onReady(ready) }
-    }
-    func release(feed: ([Float]) -> Void) {
-        lock.lock(); let b = buffer; buffer = []; released = true; lock.unlock()
-        feed(b)
-    }
 }

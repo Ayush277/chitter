@@ -24,6 +24,10 @@ public enum Prefs {
 }
 
 extension Prefs {
+    /// Start subtitles automatically when a call begins in any app or browser, and wrap up when it ends.
+    public static var autoStartOnCalls: Bool { get { d.object(forKey: "autoStartOnCalls") as? Bool ?? true } set { d.set(newValue, forKey: "autoStartOnCalls") } }
+    /// Speak other people's foreign-language speech aloud in your language (voice-over).
+    public static var dubForeignSpeech: Bool { get { d.object(forKey: "dubForeignSpeech") as? Bool ?? true } set { d.set(newValue, forKey: "dubForeignSpeech") } }
     public static var onboarded: Bool { get { d.bool(forKey: "onboarded") } set { d.set(newValue, forKey: "onboarded") } }
     public static var consentAcknowledged: Bool { get { d.bool(forKey: "consentAck") } set { d.set(newValue, forKey: "consentAck") } }
     public static var customBaseURL: String { get { d.string(forKey: "custom.baseURL") ?? "" } set { d.set(newValue, forKey: "custom.baseURL") } }

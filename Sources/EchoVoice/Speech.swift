@@ -10,10 +10,24 @@ public final class SpeechPlayer: NSObject, @unchecked Sendable {
     public override init() { super.init() }
 
     /// Renders speech to PCM buffers (no audio device involved). Used by playback and by the latency check.
-    public func synthesize(_ text: String, language: String) async -> [AVAudioPCMBuffer] {
+    /// Best installed voice for a language: Premium > Enhanced > default (download better ones in System Settings → Accessibility → Spoken Content).
+    public static func bestVoice(for language: String) -> AVSpeechSynthesisVoice? {
+        let base = String(language.prefix(2))
+        let candidates = AVSpeechSynthesisVoice.speechVoices().filter { $0.language.hasPrefix(language) || $0.language.hasPrefix(base) }
+        let exact = candidates.filter { $0.language == language }
+        let pool = exact.isEmpty ? candidates : exact
+        let region = Locale.current.region?.identifier ?? "US"
+        func score(_ v: AVSpeechSynthesisVoice) -> Int {   // quality first, then the user's own region, then en-US
+            v.quality.rawValue * 100 + (v.language.hasSuffix("-" + region) ? 10 : 0) + (v.language == "en-US" ? 5 : 0)
+        }
+        return pool.max { score($0) < score($1) } ?? AVSpeechSynthesisVoice(language: language)
+    }
+
+    public func synthesize(_ text: String, language: String, rate: Float = AVSpeechUtteranceDefaultSpeechRate) async -> [AVAudioPCMBuffer] {
         await withCheckedContinuation { (c: CheckedContinuation<[AVAudioPCMBuffer], Never>) in
             let utt = AVSpeechUtterance(string: text)
-            utt.voice = AVSpeechSynthesisVoice(language: language) ?? AVSpeechSynthesisVoice(language: String(language.prefix(2)))
+            utt.voice = Self.bestVoice(for: language)
+            utt.rate = rate
             var out: [AVAudioPCMBuffer] = []; var done = false
             synth.write(utt) { buf in
                 guard let pcm = buf as? AVAudioPCMBuffer else { return }

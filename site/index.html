@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chitter — live subtitles, interpreting and meeting notes for Mac. Free.</title>
+<meta name="description" content="Chitter is a free, open-source Mac app that shows live subtitles, interprets your voice into any call, and turns meetings into notes where every decision links to the line it came from. Local-first. No bot joins.">
+<meta property="og:title" content="Chitter — Catch every word. Keep what matters.">
+<meta property="og:description" content="Free, open-source live subtitles, interpreting and AI meeting notes for Mac. Nothing leaves your Mac by default.">
+<meta property="og:image" content="og.png"><meta property="og:type" content="website">
+<meta name="theme-color" content="#F3EDE2">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="sr" href="#main">Skip to content</a>
+<div class="wrap">
+<header>
+  <a class="logo" href="#"><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="#E9B53A" stroke-width="3"/><path d="M8 16c3-8 5 8 8 0s5 8 8 0" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>Chitter</a>
+  <nav aria-label="Main">
+    <a href="#privacy">Privacy</a><a href="#install">Install</a><a href="#faq">FAQ</a>
+    <label class="sr" for="lang">Language</label>
+    <select id="lang" aria-label="Language"><option value="en" selected>English</option><option value="es" disabled>Español (soon)</option><option value="zh" disabled>中文 (soon)</option><option value="ja" disabled>日本語 (soon)</option></select>
+  </nav>
+</header>
+<main id="main">
+<div class="hero">
+  <div>
+    <p class="tag">Free · open source · no bot</p>
+    <h1>Catch every word. Keep what matters.</h1>
+    <p class="lede">Live subtitles for any call or stream, your voice interpreted into the meeting, and notes where every decision points to the exact line it came from.</p>
+    <div class="btns"><a class="btn primary" href="#install">Download for Mac</a><a class="btn ghost" href="https://github.com/OWNER/chitter">View on GitHub</a></div>
+    <p style="font-size:14px;opacity:.8">macOS 14.4 or later · Apple silicon recommended · Apache-2.0</p>
+  </div>
+  <div class="art" aria-hidden="true">
+    <svg class="wave" viewBox="0 0 240 90" preserveAspectRatio="none"><g id="bars"></g></svg>
+    <div class="stitchin"><p>“Let's move the release to March.”</p><p>“Priya will update the privacy policy.”</p><p>“Agreed, first of March.”</p></div>
+    <div class="card notescard"><strong>Decisions</strong><br>Release moves to March 1 · <span style="font-family:var(--mono);font-size:13px">L2</span></div>
+  </div>
+</div>
+<hr class="stitch">
+
+<section aria-labelledby="ribbon-h"><p class="tag">1 · Live Ribbon</p><h2 id="ribbon-h">Subtitles for anything your Mac plays</h2>
+  <p>Zoom, Meet, a YouTube lecture, a podcast. A slim ribbon appears when someone speaks, fades after three quiet seconds, and goes see-through when you hover. A thread under each line grows as the sentence completes.</p>
+  <div class="screen" role="img" aria-label="Animated demo: a subtitle ribbon shows an English sentence with a Spanish translation beneath it"><div class="ribbon"><div class="o">Welcome everyone to the weekly planning meeting.</div><div class="t">Les damos la bienvenida a la reunión semanal.</div><div class="u"></div></div></div>
+  <p style="font-size:14px;opacity:.8">Illustration. Translation needs the Apple language pack, Ollama, or an API key you add.</p>
+</section>
+<hr class="stitch">
+
+<section aria-labelledby="int-h"><p class="tag">2 · Interpret</p><h2 id="int-h">Hold right ⌥ and speak your language</h2>
+<div class="grid"><div class="card"><h3>Your voice, their language</h3><p>Chitter recognises what you say, translates it, and speaks it into the call through the free BlackHole 2ch virtual microphone. Your real mic comes back the moment it finishes, and when you quit.</p></div>
+<div class="card"><h3>Free voices</h3><p>Uses the built-in macOS voices. No voice cloning in v0.1, and no account. In our test a 6-second sentence took 1.7 s to recognise and voice, before translation time.</p></div></div>
+</section>
+<hr class="stitch">
+
+<section aria-labelledby="thr-h"><p class="tag">3 · Pull the Thread</p><h2 id="thr-h">Every conclusion points to its source</h2>
+<p>Hover or focus a note. A thread is drawn to the line it came from.</p>
+<div class="thread" id="thread">
+  <div class="lines card" id="lines">
+    <p data-l="1"><b>L1</b>Let's start with the launch date.</p>
+    <p data-l="2"><b>L2</b>I think we should move the release to the first of March because testing is not finished.</p>
+    <p data-l="3"><b>L3</b>I will ask the design team to finish the onboarding screens by next Wednesday.</p>
+    <p data-l="4"><b>L4</b>Priya needs to update the privacy policy before launch.</p>
+  </div>
+  <ul class="items card" id="items" aria-label="Notes">
+    <li tabindex="0" data-lines="2"><strong>Decision:</strong> release moves to March 1 <small>(L2)</small></li>
+    <li tabindex="0" data-lines="3"><strong>Action:</strong> design team finishes onboarding screens, by next Wednesday <small>(L3)</small></li>
+    <li tabindex="0" data-lines="4"><strong>Action:</strong> Priya updates the privacy policy <small>(L4)</small></li>
+  </ul>
+  <svg id="threadsvg" aria-hidden="true"><path id="tpath" pathLength="1" d=""/></svg>
+</div>
+<p style="font-size:14px;opacity:.8">Sample meeting, notes written by Apple's on-device model on a Mac.</p>
+</section>
+<hr class="stitch">
+
+<section id="privacy" aria-labelledby="priv-h"><p class="tag">4 · Privacy Ledger</p><h2 id="priv-h">See every byte that leaves</h2>
+<div class="card"><p class="banner">Nothing left your Mac in this meeting</p>
+<table><caption class="sr">Example privacy ledger</caption><thead><tr><th>Time</th><th>Host</th><th>Why</th><th>Meeting data</th></tr></thead>
+<tbody><tr><td>—</td><td>—</td><td>No requests during this meeting</td><td>0 bytes</td></tr></tbody></table>
+<p style="font-size:14px;margin-bottom:0">Meeting data sent: <strong>0 bytes</strong>. If you add a cloud key, each request shows up here with its host and size. No analytics. No accounts. No Chitter servers.</p></div>
+</section>
+<hr class="stitch">
+
+<section aria-labelledby="cost-h"><p class="tag">5 · Cost</p><h2 id="cost-h">The receipt</h2>
+<div class="receipt" role="img" aria-label="Receipt: all items zero dollars, total 0 dollars 00 cents">
+<div><span>Live subtitles</span><span>$0.00</span></div><div><span>Interpreting</span><span>$0.00</span></div><div><span>Meeting notes</span><span>$0.00</span></div><div><span>Search &amp; export</span><span>$0.00</span></div><div><span>Account</span><span>none</span></div>
+<div class="total"><span>Total</span><span>$0.00</span></div></div>
+</section>
+<hr class="stitch">
+
+<section aria-labelledby="cmp-h"><p class="tag">6 · Compatibility</p><h2 id="cmp-h">What runs where</h2>
+<div class="card" style="overflow-x:auto"><table><caption class="sr">Compatibility</caption><thead><tr><th>macOS</th><th>Speech</th><th>Notes</th><th>Status</th></tr></thead><tbody>
+<tr><td>26 and later</td><td>Apple on-device</td><td>Apple on-device model</td><td>Built and run on macOS 27</td></tr>
+<tr><td>14.4 – 25</td><td>WhisperKit</td><td>Ollama or extractive</td><td>Designed for; not yet tested on real hardware</td></tr>
+<tr><td>Intel Macs</td><td colspan="3">Not tested</td></tr></tbody></table></div>
+</section>
+<hr class="stitch">
+
+<section id="install" aria-labelledby="inst-h"><p class="tag">7 · Install</p><h2 id="inst-h">Two ways</h2>
+<h3>Homebrew</h3>
+<div class="copy"><code>brew install --cask OWNER/chitter/chitter</code><button type="button" data-copy="brew install --cask OWNER/chitter/chitter">Copy</button></div>
+<h3>Download</h3>
+<p>Get <code>Chitter-0.1.0.dmg</code> from the <a href="https://github.com/OWNER/chitter/releases">Releases page</a>, drag it to Applications, then verify it:</p>
+<div class="copy"><code>shasum -a 256 ~/Downloads/Chitter-0.1.0.dmg</code><button type="button" data-copy="shasum -a 256 ~/Downloads/Chitter-0.1.0.dmg">Copy</button></div>
+<p>Chitter isn't notarized yet (no paid Apple developer account). On first launch, right-click the app and choose Open, or run:</p>
+<div class="copy"><code>xattr -dr com.apple.quarantine /Applications/Chitter.app</code><button type="button" data-copy="xattr -dr com.apple.quarantine /Applications/Chitter.app">Copy</button></div>
+</section>
+<hr class="stitch">
+
+<section id="faq" aria-labelledby="faq-h"><p class="tag">8 · FAQ</p><h2 id="faq-h">Questions</h2>
+<details><summary>Does a bot join my meeting?</summary><p>No. Chitter listens to your Mac's audio output directly. Tell people you're transcribing; laws differ and many places require everyone's consent.</p></details>
+<details><summary>What leaves my Mac?</summary><p>By default, nothing about your meetings. If you add a cloud API key, transcript text (never audio) goes to that provider, and the Privacy Ledger lists each request.</p></details>
+<details><summary>Is it really free?</summary><p>Yes. Speech, translation and notes use on-device tools. Optional cloud providers are bring-your-own-key; free tiers may rate-limit and Chitter then falls back to the next engine.</p></details>
+<details><summary>How is it different from Cicada?</summary><p>Chitter was inspired by Cicada but is a separate, original implementation. It targets macOS 14.4+, writes plain-file meetings you can open in Obsidian, and ships a Privacy Ledger.</p></details>
+<details><summary>What doesn't it do yet?</summary><p>No voice cloning, no speaker names, no Windows or Android, no cloud sync. Speaker separation is on the roadmap.</p></details>
+</section>
+</main>
+<footer><hr class="stitch" style="margin-top:0"><p>Chitter is Apache-2.0 licensed. Inspired by <a href="https://github.com/wquguru/cicada">Cicada</a>. Uses WhisperKit (MIT). BlackHole (GPL) is downloaded on request, never bundled.</p></footer>
+</div>
+<script src="app.js" defer></script>
+</body>
+</html>

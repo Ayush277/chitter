@@ -15,6 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var session: SessionController!
     private var startItem: NSMenuItem!
     private var interpretItem: NSMenuItem!
+    let callWatcher = CallWatcher()
     let settingsModel = SettingsModel()
     let ledgerModel = LedgerModel()
     let onboardingModel = OnboardingModel()
@@ -51,6 +52,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settingsWindow = HostedWindow(title: "Chitter Settings", size: NSSize(width: 660, height: 500)) { [unowned self] in AnyView(SettingsView(model: self.settingsModel)) }
         ledgerWindow = HostedWindow(title: "Privacy Ledger", size: NSSize(width: 900, height: 520)) { [unowned self] in AnyView(LedgerView(model: self.ledgerModel)) }
         onboardingWindow = HostedWindow(title: "Welcome to Chitter", size: NSSize(width: 600, height: 520)) { [unowned self] in AnyView(OnboardingView(model: self.onboardingModel, settings: self.settingsModel)) }
+        callWatcher.onStart = { [weak self] info in Task { @MainActor in self?.session.callStarted(info) } }
+        callWatcher.onEnd = { [weak self] in Task { @MainActor in self?.session.callEnded() } }
+        callWatcher.start()      // polls Core Audio every 2 s (cheap); the Prefs toggle decides whether to act
+        if ProcessInfo.processInfo.environment["CHITTER_BENCH_EXIT"] != nil { exit(0) }   // cold-start benchmark
         if !Prefs.onboarded { onboardingWindow.show() }
         session.onStateChange = { [weak self] in self?.refresh() }
         refresh()
