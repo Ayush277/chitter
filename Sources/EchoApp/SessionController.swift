@@ -25,6 +25,11 @@ final class SessionController: ObservableObject {
     private var consumer: Task<Void, Never>?
     private var feeder: FileFeeder?
     private var started = Date()
+    let store = MeetingStore()
+    lazy var index: SearchIndex? = try? SearchIndex(path: SearchIndex.defaultPath())
+    private(set) var meeting: MeetingHandle?
+    private var lastSpeech = Date()
+    private var watchdog: Task<Void, Never>?
 
     var onStateChange: (() -> Void)?
 
@@ -45,7 +50,17 @@ final class SessionController: ObservableObject {
         let engine = ASRFactory.make(preferWhisper: Prefs.preferWhisper)
         self.engine = engine
         ribbonModel.accessibilityMode = Prefs.accessibilityMode
-        started = Date(); lines = []
+        started = Date(); lines = []; lastSpeech = Date()
+        meeting = try? store.create(title: "Meeting", sourceLanguage: Prefs.sourceLanguage == "auto" ? nil : Prefs.sourceLanguage,
+                                    targetLanguage: Prefs.targetLanguage)
+        await NetworkGateway.shared.setMeeting(meeting?.info.id)
+        watchdog = Task { [weak self] in   // auto-end after N minutes without speech (default 10)
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 15_000_000_000)
+                guard let self else { return }
+                if Date().timeIntervalSince(self.lastSpeech) > Prefs.autoEndMinutes * 60 { self.stop(); return }
+            }
+        }
         ribbon.present()
 
         let startEngine: (String) async -> Bool = { [weak self] c in
@@ -102,8 +117,10 @@ final class SessionController: ObservableObject {
         ribbonModel.show(original: r.text, translation: nil, speaker: 0, isFinal: r.isFinal)
         let target = Prefs.targetLanguage
         let wantsTranslation = lang.map { Lang.base($0) != Lang.base(target) } ?? false
+        lastSpeech = Date()
         if r.isFinal {
-            lines.append(Segment(id: id, start: r.start, end: r.end, text: r.text, language: lang))
+            let seg = Segment(id: id, start: r.start, end: r.end, text: r.text, language: lang)
+            lines.append(seg); meeting?.append(seg)
         }
         guard wantsTranslation, r.isFinal || Date().timeIntervalSince(lastPartialTranslate) > 1.2 else { return }
         if !r.isFinal { lastPartialTranslate = Date() }
@@ -111,7 +128,7 @@ final class SessionController: ObservableObject {
             guard let self, let t = await self.translators.translate(r.text, from: lang, to: target) else { return }
             await MainActor.run {
                 self.ribbonModel.setTranslation(t)
-                if r.isFinal, let i = self.lines.firstIndex(where: { $0.id == id }) { self.lines[i].translation = t }
+                if r.isFinal, let i = self.lines.firstIndex(where: { $0.id == id }) { self.lines[i].translation = t; self.meeting?.append(self.lines[i]) }
             }
         }
     }
@@ -121,6 +138,13 @@ final class SessionController: ObservableObject {
         let e = engine
         Task { await e?.finish() }
         consumer?.cancel()
+        watchdog?.cancel()
+        if let m = meeting {
+            m.finish()
+            index?.index(meetingID: m.info.id, segments: m.loadSegments())
+            let id = m.info.id
+            Task { await NetworkGateway.shared.setMeeting(nil); _ = id }
+        }
         ribbon.dismiss()
         isListening = false; status = "Idle"; onStateChange?()
     }

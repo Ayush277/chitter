@@ -40,3 +40,11 @@ Measured on this host (Apple silicon, macOS 27.0.1), `Chitter --transcribe Resou
 - F4: `TranslatorChain` falls through providers, cools down a failing one for 30 s, caches, and returns nil (original only) if all fail — unit-tested. `Chitter --translate` shows Apple Translation reports the en→es pair as "supported" but not installed on this Mac, so **no real translation was produced here**; the app shows the "download the language pack" guidance and falls back to Ollama if running (not installed here).
 - `NetworkGateway` + ledger written early (needed by LLM translation); `URLSession` ban test passes.
 - Tests: 17 pass via `scripts/test.sh`.
+
+## Phase 3 — Records, search, export, privacy plumbing: DONE
+- F6: `Chitter --transcribe en.wav --record <dir>` produced `meeting.json` + append-only `transcript.jsonl` from real ASR output (folder 0700, files 0600, excluded from backup). Torn last line after a crash is skipped (unit test). Auto-end watchdog (default 10 min, `autoEndMinutes`) is implemented but not exercised in a long run.
+- F7: SQLite FTS5 trigram index + edit-distance fallback: "Marria" finds "Maria" (unit test).
+- F10: Markdown, SRT, DOCX (own zip writer; validated by `unzip -p`, CRC32 check value) — unit-tested. "Copy as Markdown" UI lands with the Notes window.
+- F13: gateway + ledger tests; `noURLSessionOutsideEchoNet` test passes.
+- F14: Keychain wrapper round-trip tested. F17: `ScreenShareSafety.apply` ready; applied when the Notes window is built (Phase 4).
+- Tests: 28 pass.

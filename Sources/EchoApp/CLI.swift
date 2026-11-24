@@ -58,12 +58,13 @@ enum CLI {
             try await engine.start(locale: locale)
             let loadTime = Date().timeIntervalSince(t0)
             var firstPartial: Double?, finals: [String] = []
+            let rec = opt("--record").flatMap { try? MeetingStore(root: URL(fileURLWithPath: $0)).create(title: "Fixture \(url.deletingPathExtension().lastPathComponent)") }
             let feedStart = Date()
             let consumer = Task {
                 for await r in engine.results {
                     if args.contains("--verbose") { FileHandle.standardError.write(Data(String(format: "%.2fs final=%d %@\n", Date().timeIntervalSince(feedStart), r.isFinal ? 1 : 0, r.text).utf8)) }
                     if firstPartial == nil { firstPartial = Date().timeIntervalSince(feedStart) }
-                    if r.isFinal { finals.append(r.text) }
+                    if r.isFinal { finals.append(r.text); rec?.append(Segment(id: finals.count, start: r.start, end: r.end, text: r.text, language: r.language)) }
                 }
             }
             await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
@@ -72,6 +73,8 @@ enum CLI {
             // trailing silence so the VAD closes the last utterance
             for _ in 0..<12 { engine.append([Float](repeating: 0, count: 1600)) }
             await engine.finish(); await consumer.value
+            rec?.finish()
+            if let rec { FileHandle.standardError.write(Data("recorded: \(rec.dir.path)\n".utf8)) }
             let total = Date().timeIntervalSince(feedStart)
             let hyp = finals.joined(separator: " ")
             let refURL = url.deletingPathExtension().appendingPathExtension("txt")

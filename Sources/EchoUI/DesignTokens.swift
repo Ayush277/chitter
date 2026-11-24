@@ -28,3 +28,8 @@ public enum Tokens {
     public static func thread(_ speaker: Int) -> Hex { speakerThreads[((speaker % 6) + 6) % 6] }
     public static func speakerInitial(_ speaker: Int) -> String { String(UnicodeScalar(UInt8(65 + ((speaker % 26) + 26) % 26))) }
 }
+
+/// F17: windows that show meeting content are hidden from screen sharing / recording by default.
+public enum ScreenShareSafety {
+    public static func apply(to window: NSWindow, hidden: Bool) { window.sharingType = hidden ? .none : .readOnly }
+}
