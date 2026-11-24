@@ -5,3 +5,6 @@
 2026-11-24 | Use system SQLite3 (FTS5) directly instead of GRDB | Fewer dependencies, no extra build risk; spec lists GRDB as allowed, not required
 2026-11-24 | No Xcode project; .app assembled by scripts/build.sh | Spec §5
 2026-11-24 | Tests use Swift Testing, not XCTest | XCTest absent from Command Line Tools (no Xcode installed)
+2026-11-24 | SpeechAnalyzer engine gated by #if compiler(>=6.2) + @available(macOS 26) | SwiftPM has no SDK-version flag; compiler version tracks the SDK
+2026-11-24 | Global hotkeys via Carbon RegisterEventHotKey | Needs no Input Monitoring permission
+2026-11-24 | WhisperKit added as dependency (MIT) | Spec §3.2 fallback ASR for macOS 14.4-25

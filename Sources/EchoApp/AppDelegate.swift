@@ -1,18 +1,36 @@
 import AppKit
+import Carbon.HIToolbox
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem?
+    var session: SessionController!
+    private var startItem: NSMenuItem!
 
-    func applicationDidFinishLaunching(_ notification: Notification) {
+    @MainActor func applicationDidFinishLaunching(_ notification: Notification) {
+        session = SessionController()
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        item.button?.image = NSImage(systemSymbolName: "waveform", accessibilityDescription: "Chitter")
         item.button?.setAccessibilityLabel("Chitter")
         let menu = NSMenu()
+        startItem = NSMenuItem(title: "Start listening", action: #selector(toggle), keyEquivalent: "")
+        menu.addItem(startItem)
+        menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Quit Chitter", action: #selector(quit), keyEquivalent: "q"))
         menu.items.forEach { $0.target = self }
         item.menu = menu
         statusItem = item
+        session.onStateChange = { [weak self] in self?.refresh() }
+        refresh()
+        Hotkeys.shared.register(keyCode: kVK_ANSI_R, id: 1) { [weak self] in MainActor.assumeIsolated { self?.session.toggleListening() } }
+        Hotkeys.shared.register(keyCode: kVK_ANSI_S, id: 2) { [weak self] in MainActor.assumeIsolated { self?.session.toggleRibbon() } }
     }
 
+    @MainActor func refresh() {
+        let listening = session.isListening
+        let name = listening ? "waveform.circle.fill" : "waveform.circle"
+        statusItem?.button?.image = NSImage(systemSymbolName: name, accessibilityDescription: listening ? "Chitter, listening" : "Chitter, idle")
+        startItem.title = listening ? "Stop listening  (⌃⌥R)" : "Start listening  (⌃⌥R)"
+    }
+
+    @MainActor @objc func toggle() { session.toggleListening() }
     @objc func quit() { NSApp.terminate(nil) }
 }
