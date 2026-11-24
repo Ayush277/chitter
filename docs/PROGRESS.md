@@ -56,3 +56,9 @@ Measured on this host (Apple silicon, macOS 27.0.1), `Chitter --transcribe Resou
 - F9 Pull the Thread: hover/click/pin logic unit-tested; thread (250 ms ease-out, instant under Reduced Motion), scroll-to-line, keyboard focus → same highlight, ⌘F search are implemented. **The Notes window was never seen on screen** (screencapture has no display permission here), so layout and animation are unverified.
 - Contrast test (spec §4.3 rule) caught two token failures; fixed (see DECISIONS).
 - Tests: 34 pass.
+
+## Phase 5 — Interpretation: DONE in code; partly measured
+- F11 pipeline (`Chitter --interpret-test sample1.wav en en`, 6.2 s utterance): ASR 0.50 s + TTS 1.15 s = **1.66 s total** (target ≤4 s). Translation wasn't in this number (en→en skip; Apple language packs aren't installed here), so the full round trip with translation is **not measured**. Mic capture, the right-⌥ monitor, BlackHole playback and mic restore were **not run end to end** (needs microphone and Input Monitoring permission, and I did not want to change this Mac's default input device).
+- Safety: `MicRouter` only changes the default input if BlackHole exists, remembers the original, restores after playback, on disable and on quit. Unit-tested as a no-op when the driver is absent.
+- F12: installer downloads through the ledger from existential.audio, verifies a pinned SHA-256 (unit-tested with known vectors), then one admin prompt via `osascript`. Failure shows the manual guide. A BlackHole device is already present on this Mac; the install path was **not exercised**.
+- Tests: 38 pass.

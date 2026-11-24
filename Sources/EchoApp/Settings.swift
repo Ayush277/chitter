@@ -8,6 +8,15 @@ enum Prefs {
         get { d.string(forKey: "targetLanguage") ?? (Locale.current.language.languageCode?.identifier ?? "en") }
         set { d.set(newValue, forKey: "targetLanguage") }
     }
+    /// The language you speak when interpreting (default: system language) and the one spoken into the call.
+    static var speakLanguage: String {
+        get { d.string(forKey: "speakLanguage") ?? (Locale.current.language.languageCode?.identifier ?? "en") }
+        set { d.set(newValue, forKey: "speakLanguage") }
+    }
+    static var interpretTarget: String {
+        get { d.string(forKey: "interpretTarget") ?? (speakLanguage == "en" ? "es" : "en") }
+        set { d.set(newValue, forKey: "interpretTarget") }
+    }
     static var accessibilityMode: Bool { get { d.bool(forKey: "accessibilityMode") } set { d.set(newValue, forKey: "accessibilityMode") } }
     static var preferWhisper: Bool { get { d.bool(forKey: "preferWhisper") } set { d.set(newValue, forKey: "preferWhisper") } }
     static var autoEndMinutes: Double { get { d.object(forKey: "autoEndMinutes") as? Double ?? 10 } set { d.set(newValue, forKey: "autoEndMinutes") } }

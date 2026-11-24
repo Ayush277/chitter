@@ -18,7 +18,8 @@ final class SessionController: ObservableObject {
     @Published var lines: [Segment] = []
 
     private let tap = SystemAudioTap()
-    private let translators = TranslatorChain([])
+    let translators = TranslatorChain([])
+    lazy var interpreter = Interpreter(translators: translators)
     private var langDetector: AudioLanguageDetector?
     private var detectedLanguage: String?
     private var lastPartialTranslate = Date.distantPast
@@ -142,6 +143,8 @@ final class SessionController: ObservableObject {
         #endif
         return Locale(identifier: code)
     }
+
+    func prepareTranslators() async { await configureTranslators() }
 
     private func configureTranslators() async {
         var chain: [Translator] = []

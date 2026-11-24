@@ -4,6 +4,7 @@ import EchoAudio
 import EchoASR
 import EchoLang
 import EchoNotes
+import EchoVoice
 import EchoNet
 
 /// Headless modes used by scripts/bench.sh and the phase checks.
@@ -60,6 +61,35 @@ enum CLI {
         print(String(decoding: (try? enc.encode(r.notes)) ?? Data(), as: UTF8.self))
         print("provider=\(r.provider) validShare=\(r.validShare) seconds=\(Date().timeIntervalSince(t0)) attempts=\(r.attempts)")
         return 0
+    }
+
+    /// `Chitter --interpret-test <wav> <from> <to>` — runs ASR → translate → TTS on a fixture and prints stage timings
+    /// (mic capture and BlackHole playback excluded).
+    static func interpretTest(_ args: [String]) async -> Int32 {
+        guard let i = args.firstIndex(of: "--interpret-test"), i + 3 < args.count else { return 2 }
+        let from = args[i + 2], to = args[i + 3]
+        do {
+            let samples = try AudioFile.loadSamples(url: URL(fileURLWithPath: args[i + 1]))
+            let t0 = Date()
+            let text = await Interpreter.recognize(samples, language: from) ?? ""
+            let tASR = Date().timeIntervalSince(t0)
+            var chain: [Translator] = []
+            #if compiler(>=6.2)
+            if #available(macOS 26, *) { chain.append(AppleTranslator()) }
+            #endif
+            let tc = TranslatorChain(chain)
+            let translated = await tc.translate(text, from: from, to: to)
+            let tTr = Date().timeIntervalSince(t0)
+            let bufs = await SpeechPlayer().synthesize(translated ?? text, language: translated == nil ? from : to)
+            let tTTS = Date().timeIntervalSince(t0)
+            let frames = bufs.reduce(0) { $0 + Int($1.frameLength) }
+            let rate = bufs.first?.format.sampleRate ?? 1
+            let out: [String: Any] = ["audio_seconds": Double(samples.count) / 16_000, "asr_s": tASR, "translate_s": tTr - tASR,
+                "tts_s": tTTS - tTr, "total_s": tTTS, "recognized": text, "translated": translated ?? NSNull(),
+                "spoken_audio_seconds": Double(frames) / rate, "bluehole_installed": AudioDevices.blackHole() != nil]
+            print(String(decoding: try JSONSerialization.data(withJSONObject: out, options: [.sortedKeys]), as: UTF8.self))
+            return 0
+        } catch { print("error: \(error)"); return 1 }
     }
 
     static func run(_ args: [String]) async -> Int32 {
