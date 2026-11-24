@@ -87,3 +87,10 @@ Measured on this host (Apple silicon, macOS 27.0.1), `Chitter --transcribe Resou
 - **Translation with no packs:** `AppleModelTranslator` uses the on-device language model. Real run: zh, ja, fr, es → English, 2.8–3.6 s each.
 - **Voice-over:** `DubQueue` speaks translated lines in order, speeds up to ~1.3× when behind, drops the oldest beyond 3 queued. Voice choice prefers Premium > Enhanced > default, then the user's region (the Mac here only had a default-quality voice). Playback to speakers **not listened to** in this session; synthesis produced audio of the expected length.
 - Tests: 52 pass.
+
+## Follow-up: faster voice-over + Chrome extension
+- **Speed:** measured the Apple on-device translator: first call 6.2 s (model load), then 1.1–1.6 s. The app now warms it up at call start and uses temperature 0. Warm results for 4 clips: translate 1.4–2.0 s (was 2.8–3.6 s), totals 3.8–6.2 s.
+- **Early-speak:** `PhraseCommitter` speaks each finished sentence from the live transcript before the utterance ends and only the remainder at the end (unit-tested incl. revisions and CJK). `DubQueue` now prepares the next clip while one plays; translations are chained so speech stays in order.
+- **Language packs:** Settings → Languages has a button that opens Apple's own download sheet for a Translation pack (not clicked in this session).
+- **Spanish detection** is still flaky with Whisper base (es → fr once, es → es twice in the same build).
+- **Extension:** `extension/` (Manifest V3). `core.js` + manifest + no-network checks: 12/12 in Chrome 156 (`test/test.html`). `test/smoke.html`: a real in-page WebRTC loopback call created a pipeline through the hook and mounted the overlay with no errors. **Not verified:** on-device SpeechRecognition from a call's audio track, model download prompts, translation/voice in a real meeting, any specific site. Not loaded as an unpacked extension in Chrome (needs the user to do it).

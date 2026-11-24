@@ -1,0 +1,24 @@
+<!doctype html><meta charset="utf-8"><title>smoke</title><body><pre id="out">running…</pre>
+<script src="../core.js"></script><script src="../page.js"></script>
+<script>
+// A real loopback WebRTC call inside this page: peer A sends an audio tone, peer B receives it as a "remote participant".
+window.addEventListener('error', e => { document.getElementById('out').textContent += '\nERROR ' + e.message; });
+(async () => {
+  const log = [];
+  try {
+    const ac = new AudioContext(); const osc = ac.createOscillator(); const dst = ac.createMediaStreamDestination(); osc.connect(dst); osc.start();
+    const a = new RTCPeerConnection(), b = new RTCPeerConnection();     // both go through Chitter's wrapper
+    log.push('wrapped=' + (RTCPeerConnection.toString().includes('Wrapped') || RTCPeerConnection.toString().includes('args')));
+    log.push('instanceof=' + (a instanceof RTCPeerConnection));
+    a.onicecandidate = e => e.candidate && b.addIceCandidate(e.candidate); b.onicecandidate = e => e.candidate && a.addIceCandidate(e.candidate);
+    dst.stream.getTracks().forEach(t => a.addTrack(t, dst.stream));
+    await a.setLocalDescription(await a.createOffer()); await b.setRemoteDescription(a.localDescription);
+    await b.setLocalDescription(await b.createAnswer()); await a.setRemoteDescription(b.localDescription);
+    await new Promise(r => setTimeout(r, 1500));
+    log.push('pipelines=' + window.__chitter.pipelines.size);
+    log.push('overlayMounted=' + (document.body.lastElementChild && document.body.lastElementChild.shadowRoot === null /* closed root */));
+    log.push('SpeechRecognition=' + typeof (window.SpeechRecognition || window.webkitSpeechRecognition));
+  } catch (e) { log.push('EXC ' + e.message); }
+  document.getElementById('out').textContent = log.join('\n'); document.title = 'DONE';
+})();
+</script>

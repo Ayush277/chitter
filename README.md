@@ -15,7 +15,10 @@ Inspired by [Cicada](https://github.com/wquguru/cicada). Chitter is an original 
 - **Records you own.** Plain Markdown/JSON/transcript files, misspelling-tolerant search, export to Markdown, SRT and Word.
 - **Privacy Ledger.** A window listing every network request the app makes. Default: "Nothing left your Mac."
 
-## Install
+## Chitter for Chrome (any OS)
+`extension/` is a Chrome extension (Windows, Linux, ChromeOS, Mac) that gives calls in the browser the same subtitles, English voice-over and notes, using only Chrome's on-device AI and sending nothing anywhere. It hooks the call's WebRTC audio, so it starts by itself on Meet, Teams, Zoom web, Webex and others, with one speaker per participant. See `extension/README.md`. **Status:** logic and a loopback WebRTC smoke test pass in Chrome 156; it has not been run in a real call.
+
+## Install (Mac app)
 Not notarised (no paid Apple developer account). Build it yourself or use a release:
 ```bash
 git clone <this repo> && cd chitter
@@ -29,8 +32,8 @@ Needs macOS 14.4+; the on-device translation and notes models need macOS 26 with
 |---|---|
 | Speech accuracy, 11.5 s English test clip | 2.6% word error rate, both Apple SpeechAnalyzer and WhisperKit base |
 | First subtitle after speech starts | Apple: 4.1 s (arrives in ~4 s sentence bursts). WhisperKit: 2.0 s. |
-| Foreign speech → English voice (6–8 s clips) | Chinese, Japanese, French and Spanish each detected, translated and voiced; 4.7–7.5 s from start of the clip to the end of the spoken translation |
-| Translation step alone (Apple on-device model) | 2.8–3.6 s per sentence |
+| Foreign speech → English voice (6–8 s clips, warm model) | Chinese, Japanese, French and Spanish each detected, translated and voiced; 3.8–6.2 s from the clip's audio being received to the end of the spoken translation (Spanish is slowest because of the language re-check). In live use, finished sentences are spoken before the speaker stops. |
+| Translation step alone (Apple on-device model) | 1.4–2.0 s per sentence once warm; the very first call costs ~6 s while the model loads, so the app warms it up when a call starts |
 | Voice synthesis | 1.5–2.2 s per sentence |
 | 30-minute soak (looped test audio) | 584 sentences, no crash, no memory growth in Chitter's process |
 | App size | 9.8 MB (models download on demand) |

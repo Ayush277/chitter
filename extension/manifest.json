@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Chitter: live subtitles and voice-over for calls",
+  "short_name": "Chitter",
+  "version": "0.1.0",
+  "description": "Live subtitles, an English voice-over of foreign speech, and meeting notes for calls in your browser. Everything runs on your device.",
+  "minimum_chrome_version": "139",
+  "icons": { "16": "icons/16.png", "48": "icons/48.png", "128": "icons/128.png" },
+  "action": { "default_popup": "popup.html", "default_title": "Chitter" },
+  "permissions": ["storage", "scripting"],
+  "optional_host_permissions": ["<all_urls>"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["https://meet.google.com/*", "https://teams.microsoft.com/*", "https://teams.live.com/*", "https://*.zoom.us/*", "https://whereby.com/*", "https://*.whereby.com/*", "https://*.webex.com/*", "https://meet.jit.si/*", "https://discord.com/*", "https://app.slack.com/*"],
+      "js": ["core.js", "page.js"],
+      "run_at": "document_start",
+      "all_frames": true,
+      "world": "MAIN"
+    },
+    {
+      "matches": ["https://meet.google.com/*", "https://teams.microsoft.com/*", "https://teams.live.com/*", "https://*.zoom.us/*", "https://whereby.com/*", "https://*.whereby.com/*", "https://*.webex.com/*", "https://meet.jit.si/*", "https://discord.com/*", "https://app.slack.com/*"],
+      "js": ["bridge.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ]
+}
