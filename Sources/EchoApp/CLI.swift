@@ -6,6 +6,9 @@ import EchoASR
 import EchoLang
 import EchoNotes
 import EchoVoice
+#if canImport(FoundationModels)
+import FoundationModels
+#endif
 import EchoNet
 
 /// Headless modes used by scripts/bench.sh and the phase checks.
@@ -154,17 +157,50 @@ enum CLI {
             if #available(macOS 26, *) { chain.append(AppleTranslator()); chain.append(AppleModelTranslator()) }
             #endif
             let tc = TranslatorChain(chain)
+            #if compiler(>=6.2)
+            if #available(macOS 26, *), !args.contains("--cold") { await AppleModelTranslator.warmUp() }   // the app does this when a call starts
+            #endif
+            let tW = Date()
             let tr = await tc.translate(text, from: lang, to: to)
+            let tTrOnly = Date().timeIntervalSince(tW)
             let tTr = Date().timeIntervalSince(t0)
             let bufs = await SpeechPlayer().synthesize(tr ?? text, language: tr == nil ? lang : to)
             let tTTS = Date().timeIntervalSince(t0)
             let voice = SpeechPlayer.bestVoice(for: to)
             let out: [String: Any] = ["detected_language": lang, "heard": text, "translated": tr ?? NSNull(), "translator": await tc.lastUsed ?? NSNull(),
-                "asr_s": tASR, "translate_s": tTr - tASR, "voice_s": tTTS - tTr, "total_s": tTTS, "audio_in_s": Double(samples.count) / 16_000,
+                "asr_s": tASR, "translate_s": tTrOnly, "voice_s": tTTS - tTr, "total_s": tASR + tTrOnly + (tTTS - tTr), "audio_in_s": Double(samples.count) / 16_000,
                 "voice": voice.map { "\($0.name) (quality \($0.quality.rawValue))" } ?? "?", "voice_audio_s": Double(bufs.reduce(0) { $0 + Int($1.frameLength) }) / (bufs.first?.format.sampleRate ?? 1)]
             print(String(decoding: try JSONSerialization.data(withJSONObject: out, options: [.sortedKeys]), as: UTF8.self))
             return 0
         } catch { print("error: \(error)"); return 1 }
+    }
+
+    /// `Chitter --translate-bench` — compares ways of calling Apple's on-device model for translation.
+    static func translateBench() async -> Int32 {
+        #if compiler(>=6.2) && canImport(FoundationModels)
+        if #available(macOS 26, *) {
+            let text = "今天我们来讨论一下项目的进度,并决定下周的工作安排。"
+            func time(_ label: String, _ f: () async throws -> String) async {
+                let t = Date(); let r = (try? await f()) ?? "ERR"
+                print(String(format: "%@: %.2fs  %@", label, Date().timeIntervalSince(t), r))
+            }
+            let instr = "Translate the user's text into English. Reply with only the translation."
+            await time("new session each call (1st)") { try await LanguageModelSession(instructions: instr).respond(to: text).content }
+            await time("new session each call (2nd)") { try await LanguageModelSession(instructions: instr).respond(to: text).content }
+            let warm = LanguageModelSession(instructions: instr); warm.prewarm()
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            await time("prewarmed session") { try await warm.respond(to: text).content }
+            await time("temperature 0") { try await LanguageModelSession(instructions: instr).respond(to: text, options: GenerationOptions(temperature: 0)).content }
+            await time("streamed, first token") {
+                var first = ""; let t = Date()
+                for try await p in LanguageModelSession(instructions: instr).streamResponse(to: text) { first = p.content; print(String(format: "  first partial at %.2fs", Date().timeIntervalSince(t))); break }
+                return first
+            }
+            let short = LanguageModelSession(instructions: "English:")
+            await time("minimal instructions") { try await short.respond(to: text, options: GenerationOptions(temperature: 0)).content }
+        }
+        #endif
+        return 0
     }
 
     static func run(_ args: [String]) async -> Int32 {

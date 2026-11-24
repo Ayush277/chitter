@@ -38,6 +38,10 @@ if CommandLine.arguments.contains("--dub-test") {
     exit(await CLI.dubTest(CommandLine.arguments))
 }
 
+if CommandLine.arguments.contains("--translate-bench") {
+    exit(await CLI.translateBench())
+}
+
 let app = NSApplication.shared
 let delegate = AppDelegate()
 app.delegate = delegate

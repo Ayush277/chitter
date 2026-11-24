@@ -61,3 +61,23 @@ func tempStore() -> MeetingStore { MeetingStore(root: FileManager.default.tempor
     #expect(Keychain.delete(account: acct, service: "app.chitter.mac.tests"))
     #expect(Keychain.get(account: acct, service: "app.chitter.mac.tests") == nil)
 }
+
+@Test func committerSpeaksFinishedSentencesEarlyAndNeverTwice() {
+    var c = PhraseCommitter()
+    #expect(c.update(partial: "Good morning everyone") == nil)                       // no finished sentence yet
+    #expect(c.update(partial: "Good morning everyone. Today we") == "Good morning everyone.")
+    #expect(c.update(partial: "Good morning everyone. Today we will review") == nil) // nothing new complete
+    #expect(c.update(partial: "Good morning everyone. Today we will review it. Then") == "Today we will review it.")
+    #expect(c.finish(final: "Good morning everyone. Today we will review it. Then we vote.") == "Then we vote.")
+    #expect(c.committed.isEmpty)                                                     // ready for the next utterance
+}
+@Test func committerHandlesRevisionsAndShortUtterances() {
+    var c = PhraseCommitter()
+    #expect(c.finish(final: "Just one sentence.") == "Just one sentence.")           // nothing committed → speak all
+    _ = c.update(partial: "Hello there. How")
+    #expect(c.update(partial: "Hi there. How are") == nil)                           // earlier words revised: wait for final
+    #expect(c.finish(final: "Hi there. How are you?") == "Hi there. How are you?")   // disagreement → speak the final once
+    var d = PhraseCommitter()
+    _ = d.update(partial: "你好。今天")
+    #expect(d.update(partial: "你好。今天我们开会。然后") == "今天我们开会。")         // CJK terminators work
+}

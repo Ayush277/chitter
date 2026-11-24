@@ -115,11 +115,18 @@ import FoundationModels
 public struct AppleModelTranslator: Translator {
     public let name = "Apple on-device model"
     public init() {}
+
+    /// The first call loads the model (~6 s measured); later calls take ~1.1–1.6 s. Call this when a call starts.
+    public static func warmUp() async {
+        guard SystemLanguageModel.default.availability == .available else { return }
+        _ = try? await AppleModelTranslator().translate("Hola", from: "es", to: "en")
+    }
+
     public func translate(_ text: String, from: String?, to: String) async throws -> String {
         guard SystemLanguageModel.default.availability == .available else { throw TranslationError.unavailable("Apple Intelligence isn't available.") }
         let target = Lang.displayName(to, in: Locale(identifier: "en"))
         let session = LanguageModelSession(instructions: "You are a live interpreter. Translate the user's text into \(target). Reply with only the translation: no quotes, no notes, no explanation.")
-        let out = try await session.respond(to: text).content.trimmingCharacters(in: .whitespacesAndNewlines)
+        let out = try await session.respond(to: text, options: GenerationOptions(temperature: 0)).content.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !out.isEmpty else { throw TranslationError.unavailable("Empty translation") }
         return out
     }

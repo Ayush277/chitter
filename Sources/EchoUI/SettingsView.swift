@@ -51,7 +51,9 @@ public final class SettingsModel: ObservableObject {
 
 public struct SettingsView: View {
     @ObservedObject var m: SettingsModel
-    public init(model: SettingsModel) { m = model }
+    @ObservedObject var packs: PackModel
+    @MainActor public init(model: SettingsModel) { m = model; packs = PackModel() }
+    @MainActor public init(model: SettingsModel, packs: PackModel) { m = model; self.packs = packs }
     static let languages: [(String, String)] = [("en", "English"), ("es", "Español"), ("fr", "Français"), ("de", "Deutsch"), ("it", "Italiano"), ("pt", "Português"),
                                                 ("zh", "中文"), ("ja", "日本語"), ("ko", "한국어"), ("ru", "Русский")]
     public var body: some View {
@@ -85,6 +87,7 @@ public struct SettingsView: View {
                 langPicker("Language being spoken", $m.sourceLanguage, auto: true)
                 langPicker("Show translation in", $m.targetLanguage)
             }
+            LanguagePackSection(model: packs, settings: m)
             Section("Interpreting (hold right ⌥)") {
                 langPicker("I speak", $m.speakLanguage)
                 langPicker("Say it in", $m.interpretTarget)

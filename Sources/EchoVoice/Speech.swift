@@ -3,7 +3,6 @@ import CoreAudio
 
 /// Text-to-speech with the built-in macOS voices (free). Optionally plays into a chosen output device (BlackHole).
 public final class SpeechPlayer: NSObject, @unchecked Sendable {
-    private let synth = AVSpeechSynthesizer()
     private var engine: AVAudioEngine?
     private let lock = NSLock()
 
@@ -29,7 +28,9 @@ public final class SpeechPlayer: NSObject, @unchecked Sendable {
             utt.voice = Self.bestVoice(for: language)
             utt.rate = rate
             var out: [AVAudioPCMBuffer] = []; var done = false
+            let synth = AVSpeechSynthesizer()          // one per call so clips can be prepared in parallel
             synth.write(utt) { buf in
+                _ = synth
                 guard let pcm = buf as? AVAudioPCMBuffer else { return }
                 if pcm.frameLength == 0 { if !done { done = true; c.resume(returning: out) } }
                 else { out.append(pcm) }

@@ -22,6 +22,8 @@ final class SessionController: ObservableObject {
     let translators = TranslatorChain([])
     lazy var interpreter = Interpreter(translators: translators)
     let dub = DubQueue()
+    private var committer = PhraseCommitter()
+    private var dubChain: Task<Void, Never>?
     private var detectedLanguage: String?
     private var lastPartialTranslate = Date.distantPast
     private var engine: ASREngine?
@@ -136,7 +138,7 @@ final class SessionController: ObservableObject {
     private func configureTranslators() async {
         var chain: [Translator] = []
         #if compiler(>=6.2)
-        if #available(macOS 26, *) { chain.append(AppleTranslator()); chain.append(AppleModelTranslator()) }
+        if #available(macOS 26, *) { chain.append(AppleTranslator()); chain.append(AppleModelTranslator()); Task.detached { await AppleModelTranslator.warmUp() } }
         #endif
         if await OpenAIClient.isReachable(.ollama) {
             chain.append(LLMTranslator(endpoint: .ollama, apiKey: { nil }))
@@ -149,21 +151,34 @@ final class SessionController: ObservableObject {
         let lang = r.language ?? detectedLanguage
         ribbonModel.show(original: r.text, translation: nil, speaker: 0, isFinal: r.isFinal)
         let target = Prefs.targetLanguage
-        let wantsTranslation = lang.map { Lang.base($0) != Lang.base(target) } ?? false
+        let foreign = lang.map { Lang.base($0) != Lang.base(target) } ?? false
         lastSpeech = Date()
         if r.isFinal {
             let seg = Segment(id: id, start: r.start, end: r.end, text: r.text, language: lang)
             lines.append(seg); meeting?.append(seg)
         }
-        guard wantsTranslation, r.isFinal || Date().timeIntervalSince(lastPartialTranslate) > 1.2 else { return }
+        // Voice-over: speak each finished sentence as soon as it exists (before the utterance ends), then the remainder.
+        if foreign && Prefs.dubForeignSpeech {
+            let phrase = r.isFinal ? committer.finish(final: r.text) : committer.update(partial: r.text)
+            if let phrase { speak(phrase, from: lang, to: target) }
+        } else if r.isFinal { committer = PhraseCommitter() }
+        guard foreign, r.isFinal || Date().timeIntervalSince(lastPartialTranslate) > 1.2 else { return }
         if !r.isFinal { lastPartialTranslate = Date() }
-        Task { [weak self] in
+        Task { [weak self] in   // on-screen translation of the whole line
             guard let self, let t = await self.translators.translate(r.text, from: lang, to: target) else { return }
-            if r.isFinal && Prefs.dubForeignSpeech { await self.dub.enqueue(t, language: target) }
             await MainActor.run {
                 self.ribbonModel.setTranslation(t)
                 if r.isFinal, let i = self.lines.firstIndex(where: { $0.id == id }) { self.lines[i].translation = t; self.meeting?.append(self.lines[i]) }
             }
+        }
+    }
+
+    /// Translate then queue for speech, strictly in order even though translations finish at different times.
+    private func speak(_ phrase: String, from lang: String?, to target: String) {
+        let previous = dubChain
+        dubChain = Task { [translators, dub] in
+            await previous?.value
+            if let t = await translators.translate(phrase, from: lang, to: target) { await dub.enqueue(t, language: target) }
         }
     }
 
