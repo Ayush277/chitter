@@ -11,6 +11,7 @@ cp "$BIN/Chitter" "$APP/Contents/MacOS/Chitter"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 [ -d Resources/Fixtures ] && cp -R Resources/Fixtures "$APP/Contents/Resources/Fixtures" || true
 for b in "$BIN"/*.bundle; do [ -e "$b" ] && cp -R "$b" "$APP/Contents/Resources/" || true; done
+python3 scripts/xcstrings_to_lproj.py Resources/Localizable.xcstrings "$APP/Contents/Resources" >/dev/null
 ID="-"
 security find-identity -v -p codesigning 2>/dev/null | grep -q "Chitter Local" && ID="Chitter Local"
 codesign --force --sign "$ID" --entitlements Resources/Chitter.entitlements "$APP" 2>&1 | tail -2

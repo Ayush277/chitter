@@ -38,3 +38,25 @@ import EchoNotes
     vm.hover(nil); #expect(vm.activeLines == [7], "pinned highlight survives hover-out")
     vm.clearPin(); #expect(vm.activeLines.isEmpty && !vm.pinned)
 }
+
+@Test func localizableCatalogIsCompleteForEnglishAndStubbedForOthers() throws {
+    let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        .appendingPathComponent("Resources/Localizable.xcstrings")
+    let obj = try JSONSerialization.jsonObject(with: Data(contentsOf: url)) as! [String: Any]
+    #expect(obj["sourceLanguage"] as? String == "en")
+    let strings = obj["strings"] as! [String: [String: Any]]
+    #expect(strings.count > 60)
+    for (key, entry) in strings {
+        let loc = entry["localizations"] as! [String: [String: [String: String]]]
+        #expect(loc["en"]?["stringUnit"]?["value"] == key, "English must equal the key: \(key)")
+        for lang in ["es", "zh-Hans", "ja", "ko"] {
+            #expect(loc[lang]?["stringUnit"]?["state"] == "needs_review", "\(lang) stub for \(key) must be marked needs_review")
+        }
+    }
+}
+@Test func accessibilityRibbonTextIsAtLeast28pt() {
+    // Spec F15: Accessibility mode enlarges ribbon text to ≥ 28 pt. The ribbon uses 28 / 34 pt in that mode.
+    let src = try! String(contentsOf: URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        .appendingPathComponent("Sources/EchoUI/Ribbon.swift"), encoding: .utf8)
+    #expect(src.contains("big ? 28 : 15") && src.contains("big ? 34 : 20"))
+}
