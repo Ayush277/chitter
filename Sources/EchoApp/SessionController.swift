@@ -23,6 +23,9 @@ final class SessionController: ObservableObject {
     lazy var interpreter = Interpreter(translators: translators)
     let dub = DubQueue()
     private var committer = PhraseCommitter()
+    private let micRecorder = MicRecorder()
+    private var micEngine: ASREngine?
+    private var micConsumer: Task<Void, Never>?
     private var dubChain: Task<Void, Never>?
     private var detectedLanguage: String?
     private var lastPartialTranslate = Date.distantPast
@@ -91,6 +94,7 @@ final class SessionController: ObservableObject {
             else { try tap.start(onSamples: sink) }
         } catch { status = "\(error)"; onStateChange?(); return }
         isListening = true; status = "Listening…"; onStateChange?()
+        if fixture == nil && Prefs.captionMyVoice { Task { await startMyVoice() } }
         notesLineCount = 0
         notesTask = Task { [weak self] in   // live notes: roughly every 60 s of new speech
             while !Task.isCancelled {
@@ -146,22 +150,32 @@ final class SessionController: ObservableObject {
         await translators.setTranslators(chain)
     }
 
-    private func handle(_ r: ASRResult) {
+    /// Captions your own microphone as speaker B. The system-audio tap only hears the other participants.
+    private func startMyVoice() async {
+        guard await MicRecorder.requestAccess() else { status = "Listening (microphone access denied, so your own voice isn't captioned)"; onStateChange?(); return }
+        let e = ASRFactory.makeMultilingual(); micEngine = e
+        do { try await e.start(locale: Locale.current) } catch { return }
+        micConsumer = Task { [weak self] in for await r in e.results { await self?.handle(r, speaker: 1) } }
+        micRecorder.onSamples = { [weak e] s in e?.append(s) }
+        try? micRecorder.start()
+    }
+
+    private func handle(_ r: ASRResult, speaker: Int = 0) {
         let id = lines.count + 1
         let lang = r.language ?? detectedLanguage
-        ribbonModel.show(original: r.text, translation: nil, speaker: 0, isFinal: r.isFinal)
+        ribbonModel.show(original: r.text, translation: nil, speaker: speaker, isFinal: r.isFinal)
         let target = Prefs.targetLanguage
         let foreign = lang.map { Lang.base($0) != Lang.base(target) } ?? false
         lastSpeech = Date()
         if r.isFinal {
-            let seg = Segment(id: id, start: r.start, end: r.end, text: r.text, language: lang)
+            let seg = Segment(id: id, start: r.start, end: r.end, text: r.text, language: lang, speaker: speaker)
             lines.append(seg); meeting?.append(seg)
         }
         // Voice-over: speak each finished sentence as soon as it exists (before the utterance ends), then the remainder.
-        if foreign && Prefs.dubForeignSpeech {
+        if foreign && Prefs.dubForeignSpeech && speaker == 0 {   // never read your own words back to you
             let phrase = r.isFinal ? committer.finish(final: r.text) : committer.update(partial: r.text)
             if let phrase { speak(phrase, from: lang, to: target) }
-        } else if r.isFinal { committer = PhraseCommitter() }
+        } else if r.isFinal && speaker == 0 { committer = PhraseCommitter() }
         guard foreign, r.isFinal || Date().timeIntervalSince(lastPartialTranslate) > 1.2 else { return }
         if !r.isFinal { lastPartialTranslate = Date() }
         Task { [weak self] in   // on-screen translation of the whole line
@@ -184,6 +198,8 @@ final class SessionController: ObservableObject {
 
     func stop() {
         tap.stop(); feeder?.stop()
+        _ = micRecorder.stop(); micRecorder.onSamples = nil
+        let me = micEngine; micEngine = nil; micConsumer?.cancel(); Task { await me?.finish() }
         let e = engine
         Task { await e?.finish() }
         consumer?.cancel()

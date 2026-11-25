@@ -4,11 +4,11 @@
   for (const id of ['target', 'sourceLang']) for (const [code, name] of langs) $(id).add(new Option(name, code));
   $('sourceLang').add(new Option('Detect automatically', 'auto'), 0);
   const saved = (await chrome.storage.local.get(KEY))[KEY] || {};
-  const s = Object.assign({ enabled: true, dub: true, target: C.baseLang(navigator.language) || 'en', sourceLang: 'auto', allowCloudSpeech: false }, saved);
-  $('enabled').checked = s.enabled; $('dub').checked = s.dub; $('target').value = s.target; $('sourceLang').value = s.sourceLang; $('cloud').checked = s.allowCloudSpeech;
+  const s = Object.assign({ enabled: true, captionMe: true, dub: true, target: C.baseLang(navigator.language) || 'en', sourceLang: 'auto', allowCloudSpeech: false }, saved);
+  $('enabled').checked = s.enabled; $('dub').checked = s.dub; $('captionMe').checked = s.captionMe; $('target').value = s.target; $('sourceLang').value = s.sourceLang; $('cloud').checked = s.allowCloudSpeech;
   const save = () => chrome.storage.local.set({ [KEY]: Object.assign({}, saved, {
-    enabled: $('enabled').checked, dub: $('dub').checked, target: $('target').value, sourceLang: $('sourceLang').value, allowCloudSpeech: $('cloud').checked }) });
-  ['enabled', 'dub', 'target', 'sourceLang', 'cloud'].forEach(id => $(id).addEventListener('change', save));
+    enabled: $('enabled').checked, dub: $('dub').checked, captionMe: $('captionMe').checked, target: $('target').value, sourceLang: $('sourceLang').value, allowCloudSpeech: $('cloud').checked }) });
+  ['enabled', 'captionMe', 'dub', 'target', 'sourceLang', 'cloud'].forEach(id => $(id).addEventListener('change', save));
   $('allsites').addEventListener('click', async () => {
     try {
       const ok = await chrome.permissions.request({ origins: ['<all_urls>'] });

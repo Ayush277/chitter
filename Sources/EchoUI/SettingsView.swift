@@ -19,6 +19,7 @@ public final class SettingsModel: ObservableObject {
     @Published public var interpretTarget = Prefs.interpretTarget { didSet { Prefs.interpretTarget = interpretTarget } }
     @Published public var accessibilityMode = Prefs.accessibilityMode { didSet { Prefs.accessibilityMode = accessibilityMode; onAccessibilityChange?(accessibilityMode) } }
     @Published public var autoStart = Prefs.autoStartOnCalls { didSet { Prefs.autoStartOnCalls = autoStart } }
+    @Published public var captionMe = Prefs.captionMyVoice { didSet { Prefs.captionMyVoice = captionMe } }
     @Published public var dub = Prefs.dubForeignSpeech { didSet { Prefs.dubForeignSpeech = dub } }
     @Published public var preferWhisper = Prefs.preferWhisper { didSet { Prefs.preferWhisper = preferWhisper } }
     @Published public var hideNotes = Prefs.hideNotesFromScreenShare { didSet { Prefs.hideNotesFromScreenShare = hideNotes } }
@@ -82,6 +83,7 @@ public struct SettingsView: View {
             Section("Calls") {
                 Toggle("Start automatically when a call begins (Zoom, Teams, Meet in any browser…)", isOn: $m.autoStart)
                 Toggle("Speak other people's foreign speech aloud in my language", isOn: $m.dub)
+                Toggle("Also caption my own voice (microphone; use headphones)", isOn: $m.captionMe)
             }
             Section("Subtitles") {
                 langPicker("Language being spoken", $m.sourceLanguage, auto: true)

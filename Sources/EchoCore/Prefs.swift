@@ -24,6 +24,8 @@ public enum Prefs {
 }
 
 extension Prefs {
+    /// Also caption your own microphone during a meeting (the system-audio tap only hears the other people).
+    public static var captionMyVoice: Bool { get { d.object(forKey: "captionMyVoice") as? Bool ?? true } set { d.set(newValue, forKey: "captionMyVoice") } }
     /// Start subtitles automatically when a call begins in any app or browser, and wrap up when it ends.
     public static var autoStartOnCalls: Bool { get { d.object(forKey: "autoStartOnCalls") as? Bool ?? true } set { d.set(newValue, forKey: "autoStartOnCalls") } }
     /// Speak other people's foreign-language speech aloud in your language (voice-over).

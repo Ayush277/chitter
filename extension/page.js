@@ -11,7 +11,7 @@
   // ---------------------------------------------------------------- settings (relayed from chrome.storage by bridge.js)
   const defaults = {
     enabled: true, target: C.baseLang(navigator.language) || 'en', dub: true, sourceLang: 'auto',
-    candidates: ['en', 'es', 'fr', 'de', 'zh', 'ja', 'ko', 'hi', 'pt', 'it', 'ru'], allowCloudSpeech: false, showRibbon: true,
+    candidates: ['en', 'es', 'fr', 'de', 'zh', 'ja', 'ko', 'hi', 'pt', 'it', 'ru'], allowCloudSpeech: false, showRibbon: true, captionMe: true,
   };
   let S = Object.assign({}, defaults);
   window.addEventListener('message', ev => {
@@ -142,8 +142,8 @@
 
   // ---------------------------------------------------------------- one pipeline per remote audio track (= per participant)
   class Pipeline {
-    constructor(track, index) {
-      this.track = track; this.index = index; this.active = true;
+    constructor(track, index, isMe) {
+      this.track = track; this.index = index; this.active = true; this.isMe = !!isMe;
       this.committer = new C.PhraseCommitter();
       const start = S.sourceLang === 'auto' ? (S.candidates.includes(S.target) ? S.target : S.candidates[0]) : S.sourceLang;
       this.probe = new C.LangProbe(S.candidates.length ? S.candidates : ['en'], start);
@@ -227,7 +227,7 @@
     }
     isTarget() { return C.baseLang(this.lang) === C.baseLang(S.target); }
     async say(phrase) {
-      if (this.isTarget() || !S.dub || !S.enabled) return;
+      if (this.isMe || this.isTarget() || !S.dub || !S.enabled) return;   // never read your own words back
       const t = await translate(phrase, this.lang, S.target);
       if (t) dub.enqueue(t);
     }
@@ -244,6 +244,21 @@
     if (!S.enabled || pipelines.has(track.id)) return;
     pipelines.set(track.id, new Pipeline(track, pipelines.size));
     refreshStatus();
+  }
+
+  // Your own microphone: the call's remote tracks only carry the OTHER people, so caption your own track too.
+  function onLocalAudio(track) {
+    if (!S.enabled || !S.captionMe || pipelines.has(track.id)) return;
+    pipelines.set(track.id, new Pipeline(track, 24, true));     // shown as speaker "Y" (you)
+    refreshStatus();
+  }
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    const gum = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+    navigator.mediaDevices.getUserMedia = async function (constraints) {
+      const stream = await gum(constraints);
+      try { if (constraints && constraints.audio) stream.getAudioTracks().forEach(onLocalAudio); } catch (e) {}
+      return stream;
+    };
   }
 
   // ---------------------------------------------------------------- hook WebRTC: a remote audio track means a call is live

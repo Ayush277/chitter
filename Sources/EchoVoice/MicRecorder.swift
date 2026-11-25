@@ -9,6 +9,8 @@ public final class MicRecorder: @unchecked Sendable {
     private let lock = NSLock()
     public private(set) var isRecording = false
     public var onLevel: (@Sendable (Float) -> Void)?
+    /// Called with each 16 kHz mono chunk while recording (used to caption your own voice live).
+    public var onSamples: (@Sendable ([Float]) -> Void)?
 
     public init() {}
 
@@ -24,7 +26,7 @@ public final class MicRecorder: @unchecked Sendable {
             guard let self else { return }
             let s = self.resampler.convert(buf)
             self.lock.lock(); self.samples += s; self.lock.unlock()
-            self.onLevel?(EnergyVAD.rms(s))
+            self.onLevel?(EnergyVAD.rms(s)); self.onSamples?(s)
         }
         try engine.start(); isRecording = true
     }
