@@ -4,7 +4,8 @@
 
 # 📘 Chitter, explained
 
-**Everything about the project in one place:** the simple explanation, how it works, the tech stack, where AI is used, the numbers, the business case, what changed over time, and ready-to-use resume and interview material.
+**A real-time speech-translation and meeting-intelligence system, built end to end as a software engineering project.**<br>
+The simple explanation, the system design, the engineering stack, where AI is used, the numbers, the business case, and ready-to-use resume and interview material.
 
 </div>
 
@@ -15,18 +16,19 @@
 1. [The project in 60 seconds](#1--the-project-in-60-seconds)
 2. [Simple explanation (no jargon)](#2--simple-explanation-no-jargon)
 3. [Real-world use cases](#3--real-world-use-cases)
-4. [How it works](#4--how-it-works)
-5. [Tech stack: what and where](#5--tech-stack-what-and-where)
-6. [Where AI is used, and which AI](#6--where-ai-is-used-and-which-ai)
-7. [Numbers](#7--numbers)
-8. [Achievements](#8--achievements)
-9. [Business case](#9--business-case)
-10. [Updates and timeline](#10--updates-and-timeline)
-11. [STAR format for your resume and interviews](#11--star-format-for-your-resume-and-interviews)
-12. [Honest status and limits](#12--honest-status-and-limits)
-13. [Likely interview questions and honest answers](#13--likely-interview-questions-and-honest-answers)
-14. [Glossary](#14--glossary)
-15. [Where to find things in the repo](#15--where-to-find-things-in-the-repo)
+4. [System design](#4--system-design)
+5. [Engineering stack, by skill area](#5--engineering-stack-by-skill-area)
+6. [Engineering concepts demonstrated](#6--engineering-concepts-demonstrated)
+7. [Where AI is used, and which AI](#7--where-ai-is-used-and-which-ai)
+8. [Numbers](#8--numbers)
+9. [Achievements](#9--achievements)
+10. [Business case](#10--business-case)
+11. [Updates and timeline](#11--updates-and-timeline)
+12. [STAR format for your resume and interviews](#12--star-format-for-your-resume-and-interviews)
+13. [Honest status and limits](#13--honest-status-and-limits)
+14. [Interview questions and honest answers](#14--interview-questions-and-honest-answers)
+15. [Glossary](#15--glossary)
+16. [Where to find things in the repo](#16--where-to-find-things-in-the-repo)
 
 ---
 
@@ -36,11 +38,11 @@
 |---|---|
 | **Name** | Chitter |
 | **Tagline** | *Catch every word. Keep what matters.* |
-| **What it is** | Free, open-source software that makes calls understandable: live subtitles, foreign speech spoken to you in your language, your own voice interpreted into the call, and meeting notes where every decision links to the exact line it came from |
-| **Two products** | 🍎 a native **Mac app** (Swift) and 🌐 a **Chrome extension** (JavaScript) that works on Windows, Linux, ChromeOS and Mac |
-| **Key idea** | Hear the call **on your own device**. No meeting bot joins. By default nothing about your meetings leaves your computer |
-| **AI** | Speech recognition, language detection, translation, note-writing and voice, all running **on-device** by default |
-| **License** | Apache-2.0 (free to use, change and share) |
+| **What it is** | A system that makes calls understandable in real time: live subtitles, foreign speech spoken to you in your language, your own voice interpreted into the call, and meeting notes where every decision links to the exact line it came from |
+| **Two clients** | 🍎 a native **desktop application** (macOS) and 🌐 a **browser extension** (Chrome, for Windows, Linux, ChromeOS and Mac), sharing one architecture |
+| **Key engineering constraint** | **On-device processing.** No meeting bot, no server, no account. By default nothing about a meeting leaves the machine, and a built-in ledger proves it |
+| **My role** | Software engineer: requirements, architecture, implementation, testing, performance measurement, packaging and documentation, end to end |
+| **Scale** | ~5,000 lines of code across 5 languages, 9 backend-style modules, 61 automated checks |
 | **Repo** | https://github.com/Ayush277/chitter |
 
 ---
@@ -55,14 +57,14 @@ Imagine you are on a video call and a colleague starts speaking Spanish, and you
 1. It **notices the call started** and wakes up by itself.
 2. It **listens** to what comes out of your speakers.
 3. It **works out which language** is being spoken.
-4. It **writes down** the words and shows them as **subtitles** on your screen.
+4. It **writes down** the words and shows them as **subtitles**.
 5. It **translates** them and **says them out loud in English**, in a natural voice.
 6. When the call ends, it writes **notes**: a summary, decisions and action items.
-7. Every note has a small tag like *(L7)* that points to the **exact sentence** it came from, so you can check it instead of trusting a computer's word.
+7. Every note has a small tag like *(L7)* pointing to the **exact sentence** it came from, so you can check it instead of trusting a computer's word.
 
-And all of this happens **on your own computer**. A built-in "Privacy Ledger" window shows every connection the app makes, and by default the answer is *"Nothing left your Mac."*
+All of this happens **on your own computer**. A built-in "Privacy Ledger" window shows every network connection the app makes, and by default the answer is *"Nothing left your Mac."*
 
-> **One-sentence version:** *Chitter is a private, on-device assistant that subtitles, translates and summarises your calls, and proves where every note came from.*
+> **One-sentence version:** *Chitter is a private, on-device assistant that subtitles, translates and summarises calls, and proves where every note came from.*
 
 ---
 
@@ -76,367 +78,409 @@ And all of this happens **on your own computer**. A built-in "Privacy Ledger" wi
 | **Lawyers, doctors, journalists, researchers** | Cannot send sensitive conversations to a cloud service | Everything runs locally; the ledger proves it |
 | **Language learners** | Hard to follow native-speed streams | Original text with translation underneath |
 | **Anyone who forgets** | "What did we decide?" | Notes with decisions and owners, each linked to its source line |
-| **Remote interviews and customer calls** | Taking notes while talking hurts the conversation | Notes write themselves; nobody has to be told to invite a bot |
+| **Remote interviews and customer calls** | Taking notes while talking hurts the conversation | Notes write themselves; nobody has to accept a bot into the meeting |
 
 ---
 
-## 4. ⚙️ How it works
+## 4. 🏗️ System design
 
 <div align="center"><img src="docs/assets/architecture.svg" alt="Architecture" width="100%"></div>
 
 ```text
-🔊 call audio ─► capture ─► hear (speech to text + language ID) ─► translate ─► 🗨️ subtitles
-                                      │                                  └────► 🔈 voice-over
-                                      └─► 📁 meeting folder ─► 🧠 notes (with source lines) ─► 🔎 search / export
+🔊 call audio ─► capture ─► stream processing (VAD, resample) ─► speech-to-text + language ID
+                                                                      │
+                  🗨️ subtitles ◄── translate ◄───────────────────────┤
+                  🔈 voice queue ◄─┘                                  └─► 📁 append-only transcript ─► 🧠 notes ─► 🔎 search / export
 ```
 
-### The five steps
-| # | Step | Mac app | Chrome extension |
+### The five stages
+| # | Stage | Desktop app | Browser extension |
 |---|---|---|---|
-| 1 | **Capture** | Core Audio *process tap* on the Mac's sound output | Hooks the page's WebRTC connection and takes each participant's audio track |
-| 2 | **Hear** | Apple SpeechAnalyzer or Whisper | Chrome on-device `SpeechRecognition` |
-| 3 | **Translate** | Apple Translation or Apple's on-device language model | Chrome `Translator` |
-| 4 | **Speak and show** | System voice + floating subtitle ribbon | `speechSynthesis` + overlay |
-| 5 | **Remember** | Plain files + SQLite search + notes | Markdown download + notes panel |
+| 1 | **Capture** | OS audio *process tap* on the sound output | Hook on the page's WebRTC connection; one audio track per participant |
+| 2 | **Stream processing** | Resample to 16 kHz mono, voice-activity detection, ring buffer | Track handed directly to the recogniser |
+| 3 | **Recognise** | On-device speech model + language detection | Browser on-device speech + language detection |
+| 4 | **Translate and render** | Translator chain → ribbon UI + voice queue | Translator → overlay + voice queue |
+| 5 | **Persist and summarise** | Append-only JSONL, SQLite FTS index, notes provider chain | In-memory transcript, Markdown export, notes via browser model |
 
-### Three clever design ideas
-1. **Auto-start without a bot.** The Mac app asks the operating system which programs currently have the microphone open. A known call app or a browser with the mic open means *a call is happening*. A 12-second grace period means a brief mute isn't mistaken for hanging up.
-2. **Speak sooner, not later.** As the live transcript grows, every finished sentence is translated and spoken **once**, before the speaker finishes talking. If voice-over falls behind it speeds up slightly (up to about 1.3×) and then **drops** the oldest line instead of drifting minutes behind.
-3. **Notes you can audit.** The notes model must cite transcript line numbers. The app **rejects any item that cites a line that doesn't exist**, so the AI cannot invent its sources.
+### Three design ideas worth explaining
+1. **Auto-start without a bot (event detection).** The app asks the operating system which processes currently have the microphone open. A known call app or a browser with the mic open means *a call is happening*. A small **state machine with hysteresis** (a 12-second grace period) stops a brief mute from being treated as a hang-up.
+2. **Low perceived latency (streaming + backpressure).** As the live transcript grows, each finished sentence is translated and queued **once**, before the speaker stops. The queue **adapts its rate** (up to about 1.3×) when it falls behind and then **drops the oldest item** rather than letting delay grow without bound.
+3. **Verifiable AI output (validation layer).** The notes model must return structured JSON citing transcript line IDs. A validator **rejects any item that cites a line that doesn't exist**, so the model cannot invent its sources, and a UI draws each note to its source line.
 
-Full diagrams: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+Full diagrams and module breakdown: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 
 ---
 
-## 5. 🧰 Tech stack: what and where
+## 5. 🧰 Engineering stack, by skill area
 
-| 🧱 Layer | 🔧 Technology | 📍 Used for | 📂 Where |
-|---|---|---|---|
-| Language (Mac) | **Swift 6**, Swift Package Manager | The whole Mac app, 9 modules | `Sources/`, `Package.swift` |
-| UI (Mac) | **SwiftUI**, **AppKit** | Notes window, Settings, Privacy Ledger, onboarding, menu bar, floating ribbon | `Sources/EchoUI`, `EchoApp` |
-| Audio | **Core Audio**, **AVFoundation** | Capture, resampling, microphone, speech output | `Sources/EchoAudio`, `EchoVoice` |
-| Call detection | **Core Audio** per-process flags | Spots which app or browser tab is in a call | `EchoAudio/CallDetector.swift` |
-| Search | **SQLite FTS5** | Full-text search that tolerates misspellings | `EchoCore/SearchIndex.swift` |
-| Secrets | macOS **Keychain** | Optional API keys | `EchoCore/Keychain.swift` |
-| Integrity | **CryptoKit** | Verifying the optional installer's checksum | `EchoVoice/BlackHoleInstaller.swift` |
-| Browser | **JavaScript**, **Manifest V3**, WebRTC, Shadow DOM | The Chrome extension | `extension/` |
-| Web | Plain **HTML + CSS + JS** | The website (about 25 KB, no framework) | `site/` |
-| Video | Swift + **WebKit** + AVFoundation | Renders the demo videos to MP4 | `video/` |
-| Tests | **Swift Testing**, in-browser JS tests | Quality checks | `Tests/`, `extension/test/` |
-| Scripts | Shell, Python | Build, package, benchmark | `scripts/` |
-| Third-party code | **WhisperKit** (MIT) | Whisper speech recognition in Swift | `EchoASR` |
-
-**Why this stack:** native Swift is the only way to reach Core Audio taps and Apple's on-device AI efficiently; plain JavaScript keeps the extension and site auditable with nothing to install; and only **one** third-party Swift library keeps licensing simple.
+| 🎯 Skill area | 🔧 What I used | 📍 Where / what for |
+|---|---|---|
+| **Languages** | **Swift**, **JavaScript**, **Python**, **Shell (bash)**, **SQL**, **HTML/CSS** | App and logic (Swift, JS), tooling and fixtures (Python, bash), search queries (SQL), web (HTML/CSS) |
+| **System design** | Modular architecture (9 modules with one-way dependencies), pipeline architecture, plug-in style provider interfaces | `Sources/` (EchoCore, EchoAudio, EchoASR, EchoLang, EchoNotes, EchoVoice, EchoNet, EchoUI, EchoApp) |
+| **Design patterns** | Strategy and fallback chain, Adapter, Facade, Observer / pub-sub, Producer-consumer queue, State machine | ASR engine interface, translator and notes chains, the network gateway, ledger updates, the voice queue, the call watcher |
+| **Concurrency and streaming** | `async/await`, actors, structured tasks, locks, ring buffers, real-time audio callbacks | Audio capture threads, the voice queue, the translator chain with cool-downs and caching |
+| **OS and device APIs** | Core Audio (process taps, per-process state), AVFoundation, Keychain, global hotkeys | Capturing audio, detecting calls, speech output, storing secrets |
+| **Web platform** | WebRTC, Web Audio / MediaStream, Shadow DOM, Chrome Extension **Manifest V3**, Chrome built-in AI APIs | The browser client: hooking calls, overlay UI, on-device models |
+| **Data and storage** | **SQLite FTS5**, append-only **JSONL** logs, plain-file storage, idempotent writes | Crash-safe transcripts, misspelling-tolerant search, Markdown/JSON/SRT/DOCX export |
+| **AI/ML integration** | On-device speech, translation and language models behind interfaces, prompt design, output validation | See [section 7](#7--where-ai-is-used-and-which-ai) |
+| **API integration** | OpenAI-compatible HTTP client, retry with exponential back-off, rate-limit handling | Optional cloud providers behind one gateway |
+| **Security and privacy engineering** | Keychain storage, checksum pinning (SHA-256), least-privilege permissions, a single audited network gateway, Trusted Types compliance, file permissions `0700/0600`, message allow-listing | Throughout; enforced by tests |
+| **Testing and quality** | Unit tests, stubbed network layer, fixtures, in-browser tests, a WebRTC loopback smoke test, source-scanning "rule" tests, accessibility contrast tests, benchmarks, 30-minute soak test | `Tests/`, `extension/test/`, `scripts/bench.sh` |
+| **Performance engineering** | Profiling stages, model warm-up, prefetching, backpressure | Cut warm translation from 2.8–3.6 s to 1.4–2.0 s |
+| **Build and delivery** | SwiftPM builds, shell packaging (DMG, ZIP, checksums), Homebrew cask template, CI workflow definitions, reproducible build script | `scripts/`, `docs/github-workflows/` |
+| **Front end and UX** | SwiftUI, AppKit, accessible design (VoiceOver labels, keyboard use, reduced motion, WCAG contrast), localisation scaffold (5 languages) | Desktop UI, extension overlay, website |
+| **Documentation** | Architecture docs, decision log (18 entries), per-phase test log | `docs/`, `DECISIONS.md` |
+| **Third-party code** | **WhisperKit** (speech recognition library) | `EchoASR` |
 
 More detail: [`docs/TECH_STACK.md`](docs/TECH_STACK.md)
 
 ---
 
-## 6. 🤖 Where AI is used, and which AI
+## 6. 🧠 Engineering concepts demonstrated
 
-> **Rule of the project:** AI runs **on the device** by default. Cloud AI is optional, off, and needs your own key.
-
-### 6.1 The AI map
-
-| 🧠 Job | 🍎 Mac app | 🌐 Chrome extension | 📍 Runs |
-|---|---|---|---|
-| **Speech to text** | **Apple SpeechAnalyzer** (macOS 26+) or **OpenAI Whisper** via WhisperKit | Chrome built-in `SpeechRecognition` (`processLocally`) | On your device |
-| **Language detection** | **Whisper** per utterance; **NaturalLanguage** text check; a safeguard re-checks implausible results such as Spanish heard as Latin | Chrome `LanguageDetector` + a confidence probe that tries your candidate languages | On your device |
-| **Translation** | **Apple Translation** language packs, then **Apple's on-device language model** as a fallback that needs no download | Chrome `Translator` | On your device |
-| **Notes** | **Apple on-device language model** → **Ollama** (local) → your own API key (Gemini, Groq, OpenRouter, custom) → offline rule-based extractor | Chrome `LanguageModel` (Gemini Nano) → offline rule-based extractor | On your device by default |
-| **Voice** | macOS speech synthesis, picking the best installed voice (Premium, then Enhanced, then standard) | Browser `speechSynthesis`, preferring natural local voices | On your device |
-
-### 6.2 Where AI is **not** used (on purpose)
-Audio capture, call detection, voice-activity detection, search, storage, export, the Privacy Ledger, the interface and every safety check are **ordinary, testable code**. The notes also have a **non-AI fallback** (a rule-based extractor), so the app still produces notes with no model at all.
-
-### 6.3 Making AI trustworthy
-| Risk | Defence |
+| Concept | How it shows up in this project |
 |---|---|
-| Model returns broken output | Notes must be JSON; the app validates, retries once with a repair prompt, then falls back |
-| Model invents sources | Items citing non-existent transcript lines are dropped |
-| Model or service unavailable | Every AI step has a fallback chain ending in plain code |
-| Free tiers rate-limit | Exponential back-off, then the next provider |
-| Long meetings overflow the model | Map-reduce: summarise chunks, merge, keep line IDs |
-| Sensitive data | Cloud providers are opt-in; only **text** (never audio) is sent; every request is listed in the ledger |
-
-### 6.4 AI results measured in this project
-| Test | Result |
-|---|---|
-| Speech accuracy, 11.5 s English clip | **2.6%** word error rate (both Apple and Whisper base) |
-| Notes from a sample meeting (Apple on-device model, no API key) | Every decision and action cited a real transcript line (valid-reference share 1.0) |
-| Foreign speech → English voice, warm model, 6–8 s clips | **Chinese, Japanese, French, Spanish** each detected, translated and voiced in **3.8–6.2 s** |
-| Translation with Apple's on-device model | **1.4–2.0 s** per sentence once warm; **~6 s** on the very first call while the model loads |
-| Language detection on 5 test languages | 4 of 5 at first (Spanish misread as Latin), then fixed by the safeguard |
+| **Separation of concerns** | Nine modules; only one (`EchoNet`) may touch the network, enforced by a test |
+| **Dependency inversion** | Speech, translation and notes sit behind interfaces, so engines can be swapped (Apple, Whisper, local server, cloud) |
+| **Fault tolerance and graceful degradation** | Every AI step has a fallback chain ending in plain code; failing providers are put on a cool-down; the app never ends with "nothing" |
+| **Resilience of data** | Append-only logs survive a crash mid-write; a torn last line is skipped, not fatal |
+| **Real-time systems** | Fixed-rate audio callbacks, buffers, voice-activity detection, bounded queues |
+| **Backpressure and load shedding** | The voice queue speeds up, then drops the oldest line instead of growing delay |
+| **State machines** | Call detection with hysteresis |
+| **Caching and warm-up** | Translation cache; model warm-up when a call starts (first call 6 s → later 1.4–2.0 s) |
+| **Observability** | The Privacy Ledger records every request; headless test modes print stage timings |
+| **Security by construction** | A single network gateway, least-privilege extension permissions, checksum-verified installer, input allow-lists |
+| **Testing strategy** | Unit, integration-style (loopback WebRTC), static "rule" tests, benchmarks and soak tests |
+| **Measure, then optimise** | Timed each stage before changing anything; reported targets that were **not** met |
+| **Cross-platform thinking** | Same architecture in Swift and JavaScript; shared design, separate capture layers |
+| **Accessibility as a requirement** | Contrast test, large-text mode, keyboard operation |
 
 ---
 
-## 7. 🔢 Numbers
+## 7. 🤖 Where AI is used, and which AI
 
-### 7.1 Size of the project (counted from the repo)
+> **Rule of the project:** AI runs **on the device** by default. Cloud AI is optional, off, and needs your own key.
+
+### 7.1 The AI map
+
+| 🧠 Job | 🍎 Desktop app | 🌐 Browser extension | 📍 Runs |
+|---|---|---|---|
+| **Speech to text** | **Apple SpeechAnalyzer** (macOS 26+) or **OpenAI Whisper** via WhisperKit | Chrome built-in `SpeechRecognition` (`processLocally`) | On your device |
+| **Language detection** | **Whisper** per utterance; **NaturalLanguage** text check; a safeguard re-checks implausible results (Spanish heard as Latin) | Chrome `LanguageDetector` + a confidence probe that tries candidate languages | On your device |
+| **Translation** | **Apple Translation** packs, then **Apple's on-device language model** as a no-download fallback | Chrome `Translator` | On your device |
+| **Notes** | **Apple on-device language model** → **Ollama** (local) → your own API key (Gemini, Groq, OpenRouter, custom) → offline rule-based extractor | Chrome `LanguageModel` (Gemini Nano) → offline rule-based extractor | On your device by default |
+| **Voice** | OS speech synthesis, choosing the best installed voice (Premium → Enhanced → standard) | Browser `speechSynthesis`, preferring natural local voices | On your device |
+
+### 7.2 Where AI is **not** used (on purpose)
+Audio capture, call detection, voice-activity detection, search, storage, export, the Privacy Ledger, the interface and every safety check are **ordinary, testable code**. The notes also have a **non-AI fallback**, so the app still produces notes with no model installed.
+
+### 7.3 Engineering around AI (making it reliable)
+| Risk | Engineering defence |
+|---|---|
+| Model returns malformed output | Require JSON, validate, retry once with a repair prompt, then fall back |
+| Model invents sources | Validator drops items citing non-existent line IDs |
+| Model or service unavailable | Provider chains ending in deterministic code |
+| Free tiers rate-limit | Exponential back-off, then the next provider; cool-downs and a cache |
+| Long meetings overflow a model | Map-reduce: summarise chunks, merge, keep line IDs |
+| High first-call latency | Warm the model at call start |
+| Sensitive data | Cloud is opt-in; only **text** (never audio) is sent; every request is logged in the ledger |
+
+### 7.4 AI results measured in this project
+| Test | Result |
+|---|---|
+| Speech accuracy, 11.5 s English clip | **2.6%** word error rate (Apple and Whisper base) |
+| Notes from a sample meeting (on-device model, no API key) | Every decision and action cited a real transcript line (valid-reference share 1.0) |
+| Foreign speech → English voice, warm model, 6–8 s clips | **Chinese, Japanese, French, Spanish** each detected, translated and voiced in **3.8–6.2 s** |
+| Translation with the on-device model | **1.4–2.0 s** per sentence once warm; **~6 s** on the first call while the model loads |
+| Language detection, 5 test languages | 4 of 5 at first (Spanish misread as Latin), then fixed by the safeguard |
+
+---
+
+## 8. 🔢 Numbers
+
+### 8.1 Size of the project (counted from the repo)
 | Metric | Value |
 |---|---|
-| Swift source | **3,928 lines** in **47 files**, **9 modules** |
-| Swift tests | **432 lines**, **48 tests** |
-| Chrome extension (code + tests) | **651 lines** of JavaScript, **13 browser checks** + a WebRTC smoke test |
-| Website | **274 lines** (HTML, CSS, JS), about **25 KB** |
-| Documentation | **739 lines** of Markdown across the repo |
-| Interface strings | **90** in a localisation catalog (English complete; ES / ZH / JA / KO stubs marked "needs review") |
-| Scripts | **10** (build, test, package, bench, fixtures, release…) |
-| Tracked files | **163** |
-| Commits | **17** |
+| Application code | **3,928 lines** in **47 files**, **9 modules** |
+| Automated Swift tests | **432 lines**, **48 tests** |
+| Browser extension (code + tests) | **651 lines** of JavaScript, **13 browser checks** + a WebRTC smoke test |
+| Website | **274 lines** (HTML, CSS, JS), about **25 KB**, no framework |
+| Documentation | **739+ lines** of Markdown |
+| Interface strings | **97** in a localisation catalog (English complete; 4 more languages scaffolded for review) |
+| Scripts | **10** (build, test, package, benchmark, fixtures, release) |
+| Languages used | **5** (Swift, JavaScript, Python, Shell, SQL) plus HTML/CSS |
+| Commits | **19** |
 | Logged design decisions | **18** in `DECISIONS.md` |
 
 Lines per module: `EchoUI` 1,025 · `EchoApp` 883 · `EchoCore` 503 · `EchoAudio` 352 · `EchoASR` 283 · `EchoNotes` 281 · `EchoVoice` 276 · `EchoNet` 191 · `EchoLang` 134.
 
-### 7.2 Performance (one Mac: Apple silicon, macOS 27.0.1)
+### 8.2 Performance (one Mac: Apple silicon, macOS 27.0.1)
 | Metric | Result | Note |
 |---|---|---|
 | App size | **9.8 MB** | AI models download on demand |
 | Cold start | **0.07 s** | launch to ready, then exit |
 | Soak test | **30 minutes, 584 sentences, no crash** | looped test audio |
-| Process CPU during soak | **0.9% average** | Chitter's own process only |
-| Process memory during soak | **8–23 MB** | excludes Apple's separate speech process |
-| First subtitle | Apple **4.1 s**, Whisper **2.0 s** | target of 1.5 s **not met** |
+| Process CPU during soak | **0.9% average** | the app's own process only |
+| Process memory during soak | **8–23 MB** | excludes the OS's separate speech process |
+| First subtitle | **2.0 s** (Whisper), **4.1 s** (Apple engine) | target of 1.5 s **not met** |
 | Voice-over end to end (warm) | **3.8–6.2 s** | per 6–8 s clip |
 
-> ⚠️ The CPU and memory figures cover Chitter's own process only. Apple's speech recogniser runs in a separate system process that isn't included, so real total load is higher.
+> ⚠️ CPU and memory cover the application's own process only; the OS's speech recogniser runs separately and isn't included, so real total load is higher.
 
-### 7.3 Price and privacy
+### 8.3 Cost and privacy
 | | |
 |---|---|
 | Cost to run (default setup) | **$0.00** per meeting hour |
 | Meeting data sent off the device (default) | **0 bytes** |
 | Accounts, analytics, servers | **None** |
-| Third-party Swift libraries | **1** (WhisperKit, MIT) |
-| Extension permissions | **2** (`storage`, `scripting`) |
+| Third-party libraries in the app | **1** |
+| Browser extension permissions | **2** (`storage`, `scripting`) |
 
 ---
 
-## 8. 🏆 Achievements
+## 9. 🏆 Achievements
 
 **Engineering**
-- Built a **complete native macOS app** and a **Chrome extension** around one architecture, plus a website, packaging scripts and demo videos.
-- Reached **real, measured results** on real audio: 2.6% word error rate, a 30-minute soak test with no crash, and four languages translated to a spoken English voice.
-- Wrote **48 Swift tests and 13 browser checks**, including tests that enforce *design rules*: "no code outside one module may use the network" and "no extension file may make a network request".
-- Found and fixed a real bug through testing: the extension crashed on Google Meet because Meet forbids a kind of page code; I reproduced it in a test with the same rule and added a regression test.
-- Solved a **toolchain problem** (an unreliable test plugin on a minimal developer toolchain) with an explicit configuration instead of retries.
+- Designed and built a **two-client system** (desktop app and browser extension) from one architecture, plus a website, packaging scripts and demo videos.
+- Reached **measured results on real audio**: 2.6% word error rate, a 30-minute soak test with no crash, and four languages translated to a spoken English voice.
+- Wrote **48 unit tests and 13 browser checks**, including tests that enforce *design rules*: "no code outside one module may use the network" and "no extension file may make a network request".
+- **Diagnosed and fixed a production-style failure**: the extension crashed on Google Meet because Meet enforces a security policy (Trusted Types). I reproduced it in a test with the same policy, fixed it, and added a regression test.
+- **Cut latency with measurement**: profiled the translation stage, found a ~6 s first-call cost, and added warm-up, early speaking and prefetching.
+- Replaced flaky retries with a **root-cause fix** for an unreliable test-plugin problem on a minimal toolchain.
 
 **Product and design**
-- **Auto-start on calls** in native apps and browser tabs with no extension and no extra permission.
-- **Pull the Thread**: an interface that draws a line from each AI note to its source sentence, so AI output can be checked.
-- A **Privacy Ledger** that makes "private" something a user can verify.
-- Accessibility mode, a colour-contrast test that caught and fixed two failing colours, and a localisation scaffold for four more languages.
+- **Auto-start on calls** in native apps and browser tabs with no extra extension or permission.
+- **Pull the Thread**: an interface that draws a line from each AI note to its source sentence, making AI output checkable.
+- A **Privacy Ledger** that turns "private" into something a user can verify.
+- Accessibility mode, a **contrast test** that caught and fixed two failing colours, and a localisation scaffold.
 
-**Honesty and process**
-- Every check result, including failures, is recorded in `docs/PROGRESS.md`; every judgement call in `DECISIONS.md`.
+**Process**
+- Every test result, including failures, is logged in `docs/PROGRESS.md`; every judgement call in `DECISIONS.md`.
 - Targets that were **not met** are stated in the README instead of hidden.
 
 ---
 
-## 9. 💼 Business case
+## 10. 💼 Business case
 
-*These are reasoning and ideas, not measured results.*
+*Reasoning and ideas, not measured results.*
 
-### 9.1 The gap
-Most meeting-AI products are **cloud-based**, **bot-based** or **paid**. A free, local-first, source-linked alternative sits in a clear position. Related open-source projects exist (for example Meetily, Hyprnote, OpenOats and Cicada), so differentiation matters.
+### 10.1 The gap
+Most meeting-AI products are **cloud-based**, **bot-based** or **paid**. A free, local-first, source-linked alternative has a clear position. Other open-source meeting tools exist, so differentiation matters.
 
-### 9.2 Differentiators
+### 10.2 Differentiators
 | Differentiator | Why it matters |
 |---|---|
-| **No bot**, works with any call app | Nobody has to be invited or asked for permission to add a bot |
+| **No bot**, works with any call app | Nobody has to be invited or asked to accept a bot |
 | **On-device by default** | Privacy, no running cost, works offline, usable in regulated settings |
-| **Notes with sources (Pull the Thread)** | Users can verify AI output instead of trusting it |
+| **Notes with sources (Pull the Thread)** | Users verify AI output instead of trusting it |
 | **Voice-over of foreign speech** | Goes beyond captions to real-time understanding |
-| **Mac app plus Chrome extension** | Reaches Windows and Linux users in the browser |
-| **Accessibility built in** | Large, high-contrast captions; VoiceOver labels; keyboard use |
+| **Desktop app plus browser extension** | Reaches Windows and Linux users in the browser |
+| **Accessibility built in** | Large high-contrast captions, screen-reader labels, keyboard use |
 | **Open formats** | Plain Markdown, JSON and audio files that open in Obsidian |
 
-### 9.3 Who would pay (possible)
+### 10.3 Who would pay (possible)
 - **Teams in regulated industries** (legal, healthcare, finance, government) that cannot use cloud transcription.
-- **Companies with multilingual teams** that want a managed, auditable rollout.
-- **Education and accessibility programmes** that need captions on any audio.
+- **Companies with multilingual teams** wanting a managed, auditable rollout.
+- **Education and accessibility programmes** needing captions on any audio.
 
-### 9.4 Possible business models
+### 10.4 Possible business models
 | Model | How it works |
 |---|---|
 | **Open core** | Free app; paid **team features**: managed deployment, shared glossaries, admin controls |
 | **On-premise and enterprise support** | Installation, audits, compliance documentation, support contracts |
 | **Premium voices and models** | Optional bring-your-own-key or paid natural voices and larger models |
-| **Education and accessibility licences** | Discounted licences for schools and non-profits |
+| **Education and accessibility licences** | Discounted plans for schools and non-profits |
 
-### 9.5 Go-to-market ideas
-Open source on GitHub, Homebrew, a Chrome Web Store listing, demo videos, posts in accessibility and language-learning communities, and write-ups on privacy.
+### 10.5 Go-to-market ideas
+Open source on GitHub, Homebrew, a Chrome Web Store listing, demo videos, and posts in accessibility, language-learning and privacy communities.
 
-### 9.6 Risks (be honest about these)
+### 10.6 Risks (be honest about these)
 - **Recording-consent laws** vary; users must tell participants they are transcribing.
 - **Platform dependence** on Apple's and Chrome's on-device models and permissions, which can change.
 - **Quality** for less common languages and noisy audio.
-- **Real-call verification** still to be completed (see section 12).
-- **Distribution** without a paid developer account means an un-notarised Mac app that needs a manual first-launch step.
+- **Real-call verification** still to be completed (section 13).
+- **Distribution** without a paid developer account means an un-notarised Mac app and a manual first-launch step.
 
 ---
 
-## 10. 🕒 Updates and timeline
+## 11. 🕒 Updates and timeline
 
 | Date | Update |
 |---|---|
-| 2026-11-24 | **Foundation.** Swift package with 9 modules, menu-bar app, build and packaging scripts, test setup |
-| 2026-11-24 | **Hearing.** System-audio capture, two speech engines (Apple, Whisper), the subtitle ribbon. Measured 2.6% word error rate |
-| 2026-11-24 | **Languages.** Language detection (4 of 5 test languages at first), translation provider chain |
-| 2026-11-24 | **Records.** Meeting folders, full-text search that tolerates misspellings, export to Markdown, SRT and Word, Keychain, the single network gateway |
-| 2026-11-24 | **Notes.** Provider chain with an offline fallback, source-line validation, the *Pull the Thread* interface |
+| 2026-11-24 | **Foundation.** 9-module project, menu-bar app, build and packaging scripts, test setup |
+| 2026-11-24 | **Hearing.** System-audio capture, two speech engines, the subtitle ribbon. Measured 2.6% word error rate |
+| 2026-11-24 | **Languages.** Language detection (4 of 5 languages at first), translation provider chain |
+| 2026-11-24 | **Records.** Meeting storage, misspelling-tolerant search, export to Markdown/SRT/Word, Keychain, the single network gateway |
+| 2026-11-24 | **Notes.** Provider chain with offline fallback, source-line validation, *Pull the Thread* interface |
 | 2026-11-24 | **Interpreting.** Hold-to-talk voice into a virtual microphone; checksum-pinned installer |
 | 2026-11-24 | **Polish.** Settings, Privacy Ledger window, onboarding, accessibility mode, localisation scaffold, contrast tests |
-| 2026-11-24 | **Website, packaging, benchmark.** 25 KB site, DMG and ZIP builds, 30-minute soak test; v0.1.0 tagged |
-| 2026-11-24 | **Auto-start and voice-over.** Call detection in apps and browsers; foreign speech translated and spoken; per-sentence language detection with a Latin-for-Spanish safeguard |
-| 2026-11-25 | **Speed.** Warm the translation model at call start (first call 6 s → later 1.4–2.0 s); speak finished sentences early; prepare the next voice clip while one plays |
-| 2026-11-25 | **Chrome extension.** On-device subtitles, voice-over and notes in the browser for Windows, Linux, ChromeOS and Mac |
-| 2026-11-25 | **First real-use bug fixed.** The extension crashed on Google Meet because of a browser security rule (Trusted Types); reproduced in a test, fixed, regression-tested. Added "caption my own voice" |
-| 2026-11-25 | **Explainer videos, documentation and public release** on GitHub |
+| 2026-11-24 | **Website, packaging, benchmark.** 25 KB site, DMG/ZIP builds, 30-minute soak test; v0.1.0 tagged |
+| 2026-11-24 | **Auto-start and voice-over.** Call detection in apps and browsers; foreign speech translated and spoken; per-sentence language detection with a Spanish/Latin safeguard |
+| 2026-11-25 | **Performance.** Model warm-up (first call 6 s → later 1.4–2.0 s), early sentence speaking, voice prefetch |
+| 2026-11-25 | **Browser extension.** On-device subtitles, voice-over and notes for Windows, Linux, ChromeOS and Mac |
+| 2026-11-25 | **First real-use bug fixed.** Extension crashed on Google Meet (Trusted Types); reproduced in a test, fixed, regression-tested. Added "caption my own voice" |
+| 2026-11-25 | **Videos, documentation and public release** on GitHub |
 
-**Next:** verify real-call capture on more machines, faster voice-over with installed translation packs, a Chrome Web Store release and a Windows app. See [`docs/ROADMAP.md`](docs/ROADMAP.md).
+**Next:** verify real-call capture on more machines, faster voice-over with installed translation packs, a Chrome Web Store release and a Windows client. See [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ---
 
-## 11. ⭐ STAR format for your resume and interviews
+## 12. ⭐ STAR format for your resume and interviews
 
 > Use only what you can explain in your own words. Every claim below is backed by a measurement or test in this repo.
 
-### 11.1 STAR story, the main one
+### 12.1 Main STAR story
 
 | | |
 |---|---|
 | **S: Situation** | Calls mix languages, many have no captions, and the AI tools that fix this usually put a bot in the meeting or send private conversations to the cloud |
-| **T: Task** | Build a free assistant that gives live subtitles, spoken translation and trustworthy notes, **entirely on the user's device**, for Mac and for browsers on other systems |
-| **A: Action** | Designed a native Swift app with 9 modules and a Chrome extension around one pipeline (capture → hear → translate → speak → remember). Used Apple's and Chrome's on-device AI instead of cloud APIs. Added provider chains so each AI step falls back gracefully. Made notes verifiable by requiring source-line citations and rejecting invalid ones. Enforced privacy with a single network gateway, a user-visible ledger and a test that fails if other code touches the network. Wrote 48 Swift tests and 13 browser checks, benchmarked accuracy and latency, and ran a 30-minute soak test |
-| **R: Result** | 2.6% word error rate on test audio; four languages (Chinese, Japanese, French, Spanish) detected, translated and spoken in English in 3.8–6.2 s; 30-minute soak with no crash; 9.8 MB app; $0 running cost and 0 bytes of meeting data sent by default; shipped as an open-source repository with documentation and demo videos |
+| **T: Task** | Design and build a system that gives live subtitles, spoken translation and trustworthy notes **entirely on the user's device**, for desktop and for browsers on other operating systems |
+| **A: Action** | Designed a modular architecture (9 modules, one-way dependencies) around a streaming pipeline: capture → recognise → translate → speak → persist. Put each AI capability behind an interface and built **fallback chains** (strategy pattern) so a missing model or service degrades gracefully. Added a **validation layer** that rejects AI notes citing non-existent sources. Enforced privacy through a **single network gateway**, a user-visible ledger and a test that fails the build if other code touches the network. Handled real-time constraints with bounded queues, backpressure and prefetching. Wrote 48 unit tests and 13 browser checks, benchmarked accuracy and latency, and ran a 30-minute soak test |
+| **R: Result** | 2.6% word error rate; four languages detected, translated and spoken in English in 3.8–6.2 s; 30-minute soak with no crash; 9.8 MB app; $0 running cost and 0 bytes of meeting data sent by default; shipped as a documented public repository with a website and demo videos |
 
-### 11.2 Smaller STAR stories
+### 12.2 Smaller STAR stories
 
-**Debugging under real conditions**
-- **S:** The Chrome extension passed all tests but did nothing on a real Google Meet call.
-- **T:** Find out why.
-- **A:** Reasoned that Meet enforces a browser rule (Trusted Types) that forbids setting HTML from a string, reproduced the crash by adding that rule to a test page, rebuilt the overlay with safe DOM calls, isolated overlay failures from the call hook, and added a regression test that forbids the pattern.
-- **R:** The failure reproduced and then passed under the same rule; the test now guards against it coming back.
+**Debugging a real-world failure**
+- **S:** The browser extension passed all tests but did nothing on a real Google Meet call.
+- **T:** Find the root cause.
+- **A:** Hypothesised that Meet's Trusted Types policy blocks HTML assignment from strings, reproduced the crash by adding that policy to a test page, rebuilt the overlay with safe DOM APIs, isolated overlay failures from the call hook, and added a regression test forbidding the pattern.
+- **R:** Failure reproduced, then passed under the same policy; the test prevents it from returning.
 
-**Performance work**
+**Performance optimisation**
 - **S:** Voice-over translation took 2.8–3.6 s per sentence.
 - **T:** Make it feel closer to live.
-- **A:** Measured the model: the first call took about 6 s (loading) and later calls 1.1–1.6 s. Warmed the model when a call starts, set temperature to 0, speak finished sentences before the utterance ends, and prepare the next voice clip while one plays.
-- **R:** Warm translation fell to 1.4–2.0 s and whole-path time to 3.8–6.2 s on four test clips.
+- **A:** Measured each stage and found a ~6 s first-call cost versus 1.1–1.6 s afterwards. Warmed the model at call start, fixed sampling to be deterministic, spoke each finished sentence before the utterance ended, and prefetched the next audio clip while one played.
+- **R:** Warm translation fell to 1.4–2.0 s and the whole path to 3.8–6.2 s on four test clips.
 
 **Quality and accessibility**
-- **S:** The design palette looked fine but was untested for readability.
-- **T:** Meet WCAG AA contrast (4.5:1) for body text.
-- **A:** Wrote a contrast test over every text and background pair.
-- **R:** It caught two failures (one colour at 4.47:1 and one at 2.9:1 on light backgrounds); I adjusted one colour and added a darker variant for light surfaces, and the test now passes.
+- **S:** The colour palette looked fine but readability was untested.
+- **T:** Meet the WCAG AA contrast ratio (4.5:1) for body text.
+- **A:** Wrote an automated test over every text-and-background pair.
+- **R:** It caught two failures (4.47:1 on dark and 2.9:1 on light); I adjusted one colour and added a darker variant for light surfaces, and the test now passes.
 
-### 11.3 Resume bullets (copy and adapt)
+**Designing for failure**
+- **S:** AI models and free API tiers can be missing, slow or rate-limited.
+- **T:** Make sure the product never ends up with no result.
+- **A:** Built ordered provider chains with cool-downs, a cache, exponential back-off and a deterministic last resort; unit-tested the fall-through behaviour with mock providers.
+- **R:** Tests show a failing or unavailable provider is skipped and the chain still produces notes.
 
-**Project title line**
-> **Chitter**: privacy-first, on-device live subtitles, voice-over translation and AI meeting notes | Swift, SwiftUI, Core Audio, WhisperKit, Apple on-device AI, JavaScript (Chrome Extension) | [github.com/Ayush277/chitter](https://github.com/Ayush277/chitter)
+### 12.3 Resume
+
+**Project line**
+> **Chitter**: real-time, on-device speech translation and meeting-notes system (desktop app + browser extension) | Swift, JavaScript, Python, SQL, Shell, Core Audio, WebRTC, SQLite, on-device ML | [github.com/Ayush277/chitter](https://github.com/Ayush277/chitter)
 
 **Bullets** *(pick 3–5)*
-- Built a native macOS app (9 Swift modules, ~3.9k lines) and a Manifest V3 Chrome extension that give live subtitles, spoken translation and AI meeting notes, running **entirely on-device** with zero cloud cost and **0 bytes** of meeting data sent by default.
-- Designed **provider-chain fallbacks** for every AI step (speech, translation, notes) so the app keeps working when a model, language pack or service is unavailable.
-- Made AI output **verifiable**: notes must cite transcript lines and the app rejects citations that do not exist; built an interface that draws each note to its source sentence.
-- Reduced foreign-speech-to-voice latency by warming the model and speaking finished sentences early; measured **1.4–2.0 s** translation (down from 2.8–3.6 s) and **3.8–6.2 s** end to end across four languages.
-- Measured and validated: **2.6% word error rate**, a **30-minute soak test (584 sentences, no crash)**, a **9.8 MB** app, **48 Swift tests** and **13 browser checks**.
-- Enforced privacy by construction: a single network gateway, a user-visible Privacy Ledger, and a test that fails the build if any other module touches the network.
-- Diagnosed and fixed a production-style failure (Trusted Types blocking the extension on Google Meet) by reproducing it in a test, then adding a regression test.
-- Documented every design decision and every test result, including the targets that were **not** met.
+- Designed and built a **two-client, on-device system** (desktop app and Manifest V3 browser extension, ~5k lines, 9 modules) that delivers live subtitles, spoken translation and AI meeting notes with **$0 running cost** and **0 bytes** of meeting data sent by default.
+- Engineered a **streaming pipeline** (capture → speech recognition → translation → speech output) with bounded queues, backpressure and prefetching; cut warm translation latency from 2.8–3.6 s to **1.4–2.0 s** and end-to-end voice-over to **3.8–6.2 s** across four languages.
+- Applied **fault-tolerant design**: strategy-pattern provider chains with cool-downs, caching and exponential back-off so every AI step degrades to deterministic code when a model or service is unavailable.
+- Built a **validation layer for AI output**: notes must cite transcript line IDs and the system rejects invalid citations, plus a UI that draws each note to its source.
+- Enforced **security and privacy by construction**: a single audited network gateway, a user-visible request ledger, Keychain storage, checksum-pinned installer and least-privilege permissions, backed by tests that fail the build on violations.
+- Verified quality with **48 unit tests, 13 browser checks, a WebRTC loopback test and a 30-minute soak test** (584 sentences, no crash); recorded 2.6% word error rate and documented the targets not yet met.
+- Root-caused and fixed a **production-style failure** (browser security policy blocking the extension on Google Meet) by reproducing it in a test and adding a regression guard.
+
+**Skills line**
+> **Languages:** Swift, JavaScript, Python, SQL, Bash, HTML/CSS · **Concepts:** system design, concurrency and streaming, design patterns, fault tolerance, API integration, testing, performance profiling, security and privacy engineering · **Tools:** Core Audio, WebRTC, SQLite (FTS5), Chrome Extensions (MV3), SwiftPM, Git, on-device ML (Whisper, Apple Intelligence, Chrome built-in AI)
 
 **One-line version**
-> Built an on-device, privacy-first assistant (Swift app + Chrome extension) that subtitles, translates, speaks and summarises calls, with notes you can verify, at $0 running cost.
+> Built an on-device, privacy-first system (desktop app + browser extension) that subtitles, translates, speaks and summarises calls in real time, with AI notes you can verify, at $0 running cost.
 
-### 11.4 LinkedIn / "About" paragraph
-> I built Chitter, an open-source assistant for calls. It listens to your computer's audio, shows live subtitles, speaks foreign languages aloud in yours, and writes meeting notes where every decision links to the exact sentence it came from. Everything runs on your own device, so nothing about your meetings is sent to a cloud service. It is a native Swift app for Mac plus a Chrome extension for Windows and Linux. I focused on privacy, accessibility and making AI output checkable instead of trusted.
+### 12.4 LinkedIn "About" paragraph
+> I'm a software engineer who built Chitter, an open-source assistant for calls. It listens to your computer's audio, shows live subtitles, speaks foreign languages aloud in yours, and writes meeting notes where every decision links to the exact sentence it came from. Everything runs on your own device, so nothing about your meetings goes to a cloud service. I designed the architecture (a streaming pipeline with fallback chains and a single audited network gateway), implemented a desktop app and a browser extension, and measured accuracy, latency and stability. I care about privacy, accessibility and making AI output checkable instead of trusted.
 
 ---
 
-## 12. ⚠️ Honest status and limits
+## 13. ⚠️ Honest status and limits
 
-> **Say this clearly in interviews.** It shows maturity, and the repo already states it.
+> **Say this clearly in interviews.** It shows engineering maturity, and the repo already states it.
 
 | Area | Status |
 |---|---|
 | Speech, language ID, translation, notes and voice on real test audio | ✅ **Run for real** with measured results |
-| Search, storage, export, call-detection logic, phrase committer, voice queue, notes validation, checksum, contrast | ✅ **Unit-tested** |
-| Chrome extension logic and a WebRTC loopback call (with Meet's security rule) | ✅ **Tested** (13 checks + smoke test) |
-| Live capture of a **real call** on the Mac app | ⚠️ **Built, not verified** (needs OS permissions to be granted by hand) |
+| Search, storage, export, call-detection logic, queueing, notes validation, checksum, contrast | ✅ **Unit-tested** |
+| Browser extension logic and a WebRTC loopback call (with Meet's security policy) | ✅ **Tested** (13 checks + smoke test) |
+| Live capture of a **real call** on the desktop app | ⚠️ **Built, not verified** (needs OS permissions granted by hand) |
 | Auto-start during a **real call** | ⚠️ Detection ran against the live system and is unit-tested; **not seen in a real call** |
-| Chrome extension in a **real Meet call** after the latest fix | ⚠️ **Not yet verified** |
+| Browser extension in a **real Meet call** after the latest fix | ⚠️ **Not yet verified** |
 | Microphone → virtual-microphone interpreter | ⚠️ **Built, not run end to end** |
-| How the Mac app's windows look on screen | ⚠️ Never screenshotted in this environment |
+| How the desktop app's windows look on screen | ⚠️ Never screenshotted in this environment |
 | Targets: first subtitle 1.5 s; interpreter 4 s | ❌ **Not met** (measured 2.0–4.1 s and 3.8–6.2 s) |
 
 **Other limits**
-- Voice-over plays on **your** speakers only; nobody else on the call hears it.
-- The extension cannot speak *into* a call (Chrome has no API for it), so "interpret my voice" is Mac-only.
-- Whisper's small model is imperfect on Spanish and Japanese; a larger model is more accurate but slower.
+- Voice-over plays on **your** speakers only; other participants do not hear it.
+- The extension cannot speak *into* a call (browsers offer no API for it), so "interpret my voice" is desktop-only.
+- The small Whisper model is imperfect on Spanish and Japanese; larger models are more accurate but slower.
 - Apple's on-device translation and notes models need **macOS 26 with Apple Intelligence**; the extension needs **Chrome 139+**.
-- The Mac app is **not notarised** (no paid Apple developer account), so first launch needs a right-click → Open.
+- The desktop app is **not notarised**, so first launch needs a right-click → Open.
 - Recording-consent laws apply: tell people you are transcribing.
 
 ---
 
-## 13. 🎤 Likely interview questions and honest answers
+## 14. 🎤 Interview questions and honest answers
 
-**"Why on-device AI instead of a cloud API?"**
-Privacy (calls can be sensitive), zero running cost, and it works offline. The trade-off is quality and speed limits of smaller models, which I handled with fallback chains and by measuring the real latency.
+**"Walk me through the architecture."**
+A streaming pipeline: capture audio, process it (resample, detect speech), recognise and detect language, translate, then render subtitles and queue speech, while persisting an append-only transcript that feeds a notes generator. Nine modules with one-way dependencies; the speech, translation and notes capabilities sit behind interfaces so implementations can be swapped.
 
-**"How do you know the AI notes are right?"**
-I don't assume they are. The model must cite transcript line numbers, and the app drops any item that cites a line that doesn't exist. The interface draws each note to its source sentence so a person can check it.
+**"What design patterns did you use and why?"**
+Strategy with a fallback chain for AI providers (any one can be missing), Adapter for the speech engines, a Facade for the network gateway (so privacy can be enforced in one place), Observer for live ledger updates, a producer-consumer queue for voice output, and a state machine with hysteresis for call detection.
 
-**"How does it know a call started?"**
-On macOS 14.4+ Core Audio exposes which processes have the microphone open. A known call app or a browser with the mic open means a call. A 12-second grace period stops a short mute from ending the meeting.
+**"How do you handle concurrency?"**
+Audio arrives on real-time callback threads, so those only copy samples into buffers. Everything else uses async/await, actors for shared state (the network gateway, the voice queue, the translator chain), and locks where a callback must stay synchronous. The voice queue is bounded, so a slow consumer cannot grow memory or delay without limit.
+
+**"How do you test something this dependent on hardware and AI?"**
+I separate pure logic from device code. Logic (call classification, queueing, validation, search, export) has unit tests with stubs and mock providers. For hardware and models I built headless modes that run the real components on recorded fixtures and print timings. For the browser I wrote an in-browser test suite and a loopback WebRTC call. And I wrote "rule" tests that scan source for forbidden patterns, such as network access outside the gateway.
 
 **"What was the hardest bug?"**
-The Chrome extension passed every test but did nothing on Google Meet. Meet enforces Trusted Types, which forbids setting HTML from a string, and my overlay did that on startup, so the whole script died before it hooked the call. I reproduced it by adding the same rule to a test page, rebuilt the overlay with DOM calls, and added a regression test.
+The extension passed every test but did nothing on Google Meet. Meet enforces Trusted Types, which forbids setting HTML from a string, and my overlay did that at startup, so the script died before hooking the call. I reproduced it by adding the same policy to a test page, rebuilt the overlay with safe DOM APIs, isolated overlay failures from the call hook, and added a regression test.
 
 **"How did you reduce latency?"**
-I measured instead of guessing: the model's first call took about 6 s (loading) and later calls about 1.1–1.6 s. So I warm it at call start, set temperature to 0, speak each finished sentence before the speaker stops, and prepare the next voice clip while one plays.
+I measured each stage first: the translation model's first call cost about 6 s (loading), later calls about 1.1–1.6 s. So I warm it when a call starts, make decoding deterministic, speak each finished sentence before the speaker stops, and prefetch the next audio clip while the current one plays.
+
+**"How do you make AI output trustworthy?"**
+I don't trust it by default. Notes must be JSON citing transcript line IDs; a validator drops anything citing a line that doesn't exist; there is a retry with a repair prompt and a deterministic fallback; and the UI shows each note's source so a person can verify it.
+
+**"How does it fail?"**
+Gracefully. A missing model or rate-limited provider is skipped and put on a cool-down; if every AI option fails, a rule-based extractor still produces notes. A crash mid-write loses at most one partial line because transcripts are append-only.
 
 **"What didn't work?"**
-My first-subtitle target of 1.5 s was missed (2.0 s with Whisper, 4.1 s with Apple's engine, which delivers results in bursts). Language detection misheard Spanish as Latin, which I fixed with a safeguard that re-checks likely languages. Real-call capture is still unverified because it needs permissions granted by hand.
+The 1.5 s first-subtitle target was missed (2.0 s with Whisper, 4.1 s with Apple's engine, which delivers results in bursts). Language detection misheard Spanish as Latin; I added a safeguard that re-checks likely languages. Real-call capture is still unverified because it needs permissions I could only grant by hand.
+
+**"How would you scale it or take it cross-platform?"**
+The capture layer is the only platform-specific part. I already built a browser version that covers Windows and Linux for web calls. A Windows client would need loopback audio capture and a Windows speech stack, reusing the notes logic, validation rules and file format.
 
 **"How would you make money from it?"**
-Keep the app free and open source; sell managed team deployment, on-premise installs and support to regulated industries, plus education and accessibility licences. These are ideas, not validated.
+Keep the app free and open source; sell managed team deployment, on-premise installs and support to regulated industries, plus education and accessibility plans. These are ideas, not validated.
 
 **"What would you do next?"**
-Verify real-call capture on more machines, ship the extension through the Chrome Web Store, make voice-over faster with installed translation packs, and build a Windows app.
-
-**"How is it different from Otter or Granola?"**
-It is free and open source, no bot joins, nothing leaves the device by default, notes cite their source lines, and it speaks translations aloud instead of only captioning.
+Verify real-call capture on more machines, ship the extension through the Chrome Web Store, speed up voice-over with installed translation packs, and build a Windows client.
 
 ---
 
-## 14. 📖 Glossary
+## 15. 📖 Glossary
 
 | Term | Meaning |
 |---|---|
 | **On-device AI** | AI that runs on your own computer instead of a remote server |
 | **ASR / speech recognition** | Turning speech audio into text |
-| **Whisper** | A speech-recognition model that supports many languages |
-| **WhisperKit** | A Swift library that runs Whisper on Apple devices |
-| **SpeechAnalyzer** | Apple's on-device speech recogniser (macOS 26+) |
+| **Whisper / WhisperKit** | A multilingual speech-recognition model, and a Swift library that runs it |
 | **Language model (LLM)** | An AI model that reads and writes text; used here for translation and notes |
-| **Core Audio process tap** | A macOS feature that lets an app listen to other programs' audio output |
+| **Process tap** | An OS feature that lets an app listen to other programs' audio output |
 | **WebRTC** | The browser technology behind video calls |
 | **Manifest V3** | The current format for Chrome extensions |
-| **Trusted Types** | A browser security rule that blocks unsafe HTML injection |
-| **Provider chain** | A list of options tried in order until one works |
-| **Phrase committer** | Code that hands out each finished sentence once so it can be spoken early |
+| **Trusted Types** | A browser security policy that blocks unsafe HTML injection |
+| **Provider chain** | An ordered list of options tried until one works (strategy + fallback) |
+| **Backpressure** | Slowing down or shedding work when a consumer cannot keep up |
+| **Hysteresis** | Requiring a condition to persist before changing state, to avoid flapping |
+| **Append-only log** | A file that is only ever added to, so a crash cannot corrupt earlier data |
+| **FTS5** | SQLite's full-text search feature |
 | **WER (word error rate)** | Percent of words transcribed wrongly; lower is better |
-| **Soak test** | Running something for a long time to check it stays stable |
+| **Soak test** | Running a system for a long time to check it stays stable |
 | **Privacy Ledger** | The window listing every network request the app made |
 | **Pull the Thread** | The interface that draws a line from a note to its source sentence |
-| **FTS5** | SQLite's full-text search feature |
 | **WCAG AA** | An accessibility standard; body text needs a 4.5:1 contrast ratio |
 
 ---
 
-## 15. 🗂️ Where to find things in the repo
+## 16. 🗂️ Where to find things in the repo
 
 | I want to see… | Go to |
 |---|---|
@@ -449,9 +493,9 @@ It is free and open source, no bot joins, nothing leaves the device by default, 
 | Every judgement call | [`DECISIONS.md`](DECISIONS.md) |
 | Benchmark data | `docs/bench-results.json` |
 | What's next | [`docs/ROADMAP.md`](docs/ROADMAP.md) |
-| The Mac app code | `Sources/` |
-| The Chrome extension | `extension/` |
+| The desktop app code | `Sources/` |
+| The browser extension | `extension/` |
 | The website and videos | `site/` |
-| Run the tests | `scripts/test.sh` (Swift) · `extension/test/test.html` (browser) |
+| Run the tests | `scripts/test.sh` (unit) · `extension/test/test.html` (browser) |
 
-<div align="center"><sub>Chitter · Apache-2.0 · by <a href="https://github.com/Ayush277">Ayush Kumar</a></sub></div>
+<div align="center"><sub>Chitter · by <a href="https://github.com/Ayush277">Ayush Kumar</a></sub></div>

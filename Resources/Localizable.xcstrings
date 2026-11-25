@@ -176,6 +176,41 @@
         }
       }
     },
+    "Also caption my own voice (microphone; use headphones)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Also caption my own voice (microphone; use headphones)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Also caption my own voice (microphone; use headphones)"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Also caption my own voice (microphone; use headphones)"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Also caption my own voice (microphone; use headphones)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Also caption my own voice (microphone; use headphones)"
+          }
+        }
+      }
+    },
     "Also enlarges the transcript in the Notes window. Every control is VoiceOver-labelled and the Notes window works from the keyboard alone (⌘F search, Tab through notes to pull their thread).": {
       "extractionState": "manual",
       "localizations": {
@@ -312,6 +347,41 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "Base URL (e.g. https://api.openai.com/v1)"
+          }
+        }
+      }
+    },
+    "Calls": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calls"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Calls"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Calls"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Calls"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Calls"
           }
         }
       }
@@ -771,6 +841,41 @@
         }
       }
     },
+    "Fast translation (Apple language packs)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fast translation (Apple language packs)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fast translation (Apple language packs)"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fast translation (Apple language packs)"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fast translation (Apple language packs)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fast translation (Apple language packs)"
+          }
+        }
+      }
+    },
     "Find": {
       "extractionState": "manual",
       "localizations": {
@@ -1222,6 +1327,41 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "Language detection runs on your Mac within a few seconds."
+          }
+        }
+      }
+    },
+    "Language to translate from": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language to translate from"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Language to translate from"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Language to translate from"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Language to translate from"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Language to translate from"
           }
         }
       }
@@ -2346,6 +2486,41 @@
         }
       }
     },
+    "Speak other people's foreign speech aloud in my language": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speak other people's foreign speech aloud in my language"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Speak other people's foreign speech aloud in my language"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Speak other people's foreign speech aloud in my language"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Speak other people's foreign speech aloud in my language"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Speak other people's foreign speech aloud in my language"
+          }
+        }
+      }
+    },
     "Start / stop meeting": {
       "extractionState": "manual",
       "localizations": {
@@ -2377,6 +2552,41 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "Start / stop meeting"
+          }
+        }
+      }
+    },
+    "Start automatically when a call begins (Zoom, Teams, Meet in any browser…)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start automatically when a call begins (Zoom, Teams, Meet in any browser…)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Start automatically when a call begins (Zoom, Teams, Meet in any browser…)"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Start automatically when a call begins (Zoom, Teams, Meet in any browser…)"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Start automatically when a call begins (Zoom, Teams, Meet in any browser…)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Start automatically when a call begins (Zoom, Teams, Meet in any browser…)"
           }
         }
       }
@@ -2871,37 +3081,37 @@
         }
       }
     },
-    "Version 0.1.0 · Apache-2.0 · Inspired by Cicada (wquguru/cicada)": {
+    "Version 0.1.0": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Version 0.1.0 · Apache-2.0 · Inspired by Cicada (wquguru/cicada)"
+            "value": "Version 0.1.0"
           }
         },
         "es": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Version 0.1.0 · Apache-2.0 · Inspired by Cicada (wquguru/cicada)"
+            "value": "Version 0.1.0"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Version 0.1.0 · Apache-2.0 · Inspired by Cicada (wquguru/cicada)"
+            "value": "Version 0.1.0"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Version 0.1.0 · Apache-2.0 · Inspired by Cicada (wquguru/cicada)"
+            "value": "Version 0.1.0"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Version 0.1.0 · Apache-2.0 · Inspired by Cicada (wquguru/cicada)"
+            "value": "Version 0.1.0"
           }
         }
       }
@@ -3007,6 +3217,41 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "目的"
+          }
+        }
+      }
+    },
+    "Without a pack, Chitter still translates using Apple's on-device model (about 1.5–2 s per sentence). Packs are faster.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Without a pack, Chitter still translates using Apple's on-device model (about 1.5–2 s per sentence). Packs are faster."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Without a pack, Chitter still translates using Apple's on-device model (about 1.5–2 s per sentence). Packs are faster."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Without a pack, Chitter still translates using Apple's on-device model (about 1.5–2 s per sentence). Packs are faster."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Without a pack, Chitter still translates using Apple's on-device model (about 1.5–2 s per sentence). Packs are faster."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Without a pack, Chitter still translates using Apple's on-device model (about 1.5–2 s per sentence). Packs are faster."
           }
         }
       }

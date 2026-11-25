@@ -173,7 +173,7 @@ public struct SettingsView: View {
         VStack(spacing: 8) {
             Text("Chitter").font(.system(size: 28, design: .serif).weight(.bold))
             Text("Catch every word. Keep what matters.").foregroundStyle(.secondary)
-            Text("Version 0.1.0 · Apache-2.0 · Inspired by Cicada (wquguru/cicada)").font(.caption)
+            Text("Version 0.1.0").font(.caption)
             Text("Uses WhisperKit (MIT). BlackHole (GPL) is downloaded on request, never bundled.").font(.caption).foregroundStyle(.secondary)
         }.frame(maxWidth: .infinity, maxHeight: .infinity)
     }

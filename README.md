@@ -9,9 +9,8 @@
 ![Chrome](https://img.shields.io/badge/Chrome_extension-139%2B-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)
 ![On-device AI](https://img.shields.io/badge/AI-on--device-6A4FD6?style=for-the-badge)
 ![Privacy](https://img.shields.io/badge/privacy-local--first-2E9C8E?style=for-the-badge)
-![License](https://img.shields.io/badge/license-Apache--2.0-E9B53A?style=for-the-badge)
 
-**A free, open-source assistant for calls: live subtitles, an English voice-over of foreign speech,<br>your own voice interpreted into the meeting, and notes that show where every decision came from.**
+**A real-time speech-translation and meeting-notes system, built as a software engineering project:  live subtitles, an English voice-over of foreign speech,<br>your own voice interpreted into the meeting, and notes that show where every decision came from.**
 
 *No bot joins your meeting. By default, nothing about your meetings leaves your computer.*
 
@@ -83,22 +82,25 @@ Details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 
 ---
 
-## 🧰 Tech stack, simply
+## 🧰 Engineering stack at a glance
 
-| 🧱 Layer | 🔧 Technology | 📍 Where it is used |
+| 🎯 Skill area | 🔧 Used | 📍 Where |
 |---|---|---|
-| Mac app language | **Swift 6** + Swift Package Manager | All of `Sources/` (9 modules) |
-| Mac interface | **SwiftUI** + **AppKit** | Notes window, Settings, Privacy Ledger, onboarding; menu-bar item and floating ribbon |
-| Audio capture | **Core Audio** process tap, **AVFoundation** | `EchoAudio`: hears what the Mac plays, resamples to 16 kHz |
-| Call detection | **Core Audio** per-process "mic in use" flag | `EchoAudio/CallDetector.swift`: finds calls in apps and browser tabs, no extension needed |
-| Storage and search | Plain files + **SQLite FTS5** | `EchoCore`: Markdown/JSON meetings, misspelling-tolerant search |
-| Secrets | macOS **Keychain** | API keys (optional providers only) |
-| Chrome extension | **Manifest V3**, plain JavaScript, WebRTC hook | `extension/`: works on Windows, Linux, ChromeOS and Mac |
-| Website | Plain **HTML + CSS + JS** | `site/`: no framework, 20 KB, deployed with GitHub Pages |
-| Videos | Swift + **WebKit** + AVFoundation | `video/`: renders animation frames into MP4 |
-| Tests | **Swift Testing**, in-browser JS tests | `Tests/` (48 Swift tests), `extension/test/` (13 checks) |
+| **Languages** | Swift · JavaScript · Python · Shell · SQL · HTML/CSS | App and logic, extension, tooling, search, web |
+| **System design** | 9 modules with one-way dependencies; streaming pipeline | `Sources/` |
+| **Design patterns** | Strategy + fallback chains · Adapter · Facade · Observer · Producer-consumer queue · State machine | Speech/translation/notes providers, network gateway, voice queue, call detection |
+| **Concurrency** | async/await · actors · locks · real-time audio callbacks · bounded queues with backpressure | Capture, voice queue, translator chain |
+| **OS and device APIs** | Core Audio (process taps, per-process state) · AVFoundation · Keychain · global hotkeys | Capturing audio, detecting calls, storing secrets |
+| **Web platform** | WebRTC hook · Web Audio / MediaStream · Shadow DOM · Chrome Manifest V3 · Chrome built-in AI | `extension/` (Windows, Linux, ChromeOS, Mac) |
+| **Data** | SQLite FTS5 · append-only JSONL logs · plain-file storage | Crash-safe transcripts, misspelling-tolerant search, export |
+| **AI integration** | On-device speech, translation and language models behind interfaces · output validation | See below |
+| **Security and privacy** | Single audited network gateway · Keychain · SHA-256 pinning · least-privilege permissions · Trusted Types compliance | Enforced by tests |
+| **Testing** | 48 unit tests · 13 browser checks · WebRTC loopback test · rule tests · benchmarks · 30-minute soak | `Tests/`, `extension/test/`, `scripts/` |
+| **Delivery** | Shell packaging (DMG, ZIP, checksums) · Homebrew cask template · CI workflow definitions | `scripts/`, `docs/github-workflows/` |
+| **Front end and UX** | SwiftUI · AppKit · accessibility (contrast, keyboard, screen-reader labels) · localisation scaffold | Desktop UI, overlay, website |
+| **Third-party code** | WhisperKit (speech recognition library) | `EchoASR` |
 
-Full table with reasons: [`docs/TECH_STACK.md`](docs/TECH_STACK.md)
+Full table with reasons: [`docs/TECH_STACK.md`](docs/TECH_STACK.md) · Skills, resume and interview material: [`PROJECT_EXPLAINED.md`](PROJECT_EXPLAINED.md)
 
 ---
 
@@ -193,11 +195,5 @@ chitter/
 ## ⚖️ Responsible use
 
 Laws about recording and transcribing calls vary, and many places require everyone's consent. Tell people you are transcribing. You are responsible for following the rules where you are.
-
-## 🙏 Credits and license
-
-Inspired by [Cicada](https://github.com/wquguru/cicada). Chitter is an original implementation: no code, text or art was copied. Uses [WhisperKit](https://github.com/argmaxinc/WhisperKit) (MIT). The optional BlackHole virtual microphone (GPL) is downloaded on request, never bundled. See [`THIRD_PARTY.md`](THIRD_PARTY.md).
-
-Licensed under **Apache-2.0**.
 
 <div align="center"><sub>Built by <a href="https://github.com/Ayush277">Ayush Kumar</a></sub></div>
