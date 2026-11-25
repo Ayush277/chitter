@@ -1,5 +1,6 @@
-<!doctype html><meta charset="utf-8"><title>smoke</title><body><pre id="out">running…</pre>
-<script src="../core.js"></script><script src="../page.js"></script>
+<!doctype html><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="require-trusted-types-for 'script'">   <!-- the same rule Google Meet enforces --><title>smoke</title><body><pre id="out">running…</pre>
+<script src="../core.js?v=3"></script><script src="../page.js?v=3"></script>
 <script>
 // A real loopback WebRTC call inside this page: peer A sends an audio tone, peer B receives it as a "remote participant".
 window.addEventListener('error', e => { document.getElementById('out').textContent += '\nERROR ' + e.message; });

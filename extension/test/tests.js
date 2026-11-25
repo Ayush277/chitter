@@ -68,7 +68,7 @@
     if (!md.includes('Do it _(L3)_') || !md.includes('**Maria**') || !md.includes('> Hello')) throw new Error(md);
   });
 
-  const text = async f => (await fetch(f)).text();
+  const text = async f => (await fetch(f, { cache: 'no-store' })).text();
   await test('manifest is MV3 with minimal permissions and MAIN-world page script', async () => {
     const m = JSON.parse(await text('../manifest.json'));
     eq(m.manifest_version, 3);
@@ -86,6 +86,13 @@
     for (const f of ['core.js', 'page.js', 'bridge.js', 'background.js', 'popup.js']) {
       const src = (await text('../' + f)).split('\n').filter(l => !l.trim().startsWith('//') && !l.trim().startsWith('/*') && !l.trim().startsWith('*')).join('\n');
       const hit = src.match(banned); if (hit) throw new Error(f + ' mentions ' + hit[0]);
+    }
+  });
+  await test('no HTML-string injection (Google Meet enforces Trusted Types and would crash the script)', async () => {
+    for (const f of ['page.js', 'core.js', 'bridge.js']) {
+      const src = (await text('../' + f + '?v=' + Date.now())).split('\n').filter(l => !l.trim().startsWith('//')).join('\n');
+      const hit = src.match(/\.(innerHTML|outerHTML)\s*=|insertAdjacentHTML|document\.write|\beval\(|new Function\(/);
+      if (hit) throw new Error(f + ' uses ' + hit[0]);
     }
   });
   await test('cloud speech is opt-in and defaults off', async () => {

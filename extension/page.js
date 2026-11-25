@@ -24,12 +24,18 @@
   const toBridge = msg => window.postMessage(Object.assign({ __chitter: 'to-bridge' }, msg), '*');
 
   // ---------------------------------------------------------------- overlay (shadow DOM so the site's CSS can't touch it)
-  const ui = (() => {
+  let ui;
+  try { ui = (() => {
     const host = document.createElement('div');
     host.style.cssText = 'all:initial;position:fixed;inset:0;pointer-events:none;z-index:2147483647';
     const root = host.attachShadow({ mode: 'closed' });
-    root.innerHTML = `
-<style>
+    // Built with DOM calls, never innerHTML: Google Meet (and other Google apps) enforce Trusted Types, which makes
+    // assigning an HTML string throw and would kill this whole script.
+    const el = (tag, props, ...kids) => { const e = document.createElement(tag);
+      for (const k in props || {}) { if (k === 'class') e.className = props[k]; else e.setAttribute(k, props[k]); }
+      kids.forEach(c => e.append(c)); return e; };
+    const style = document.createElement('style');
+    style.textContent = `
 :host{all:initial}
 *{box-sizing:border-box;font-family:-apple-system,"Segoe UI",Roboto,sans-serif}
 .rib{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);width:min(860px,92vw);background:rgba(20,22,43,.93);color:#ECE6D8;border-radius:14px;padding:12px 18px;pointer-events:auto;opacity:0;transition:opacity .2s;box-shadow:0 10px 40px rgba(0,0,0,.4)}
@@ -51,12 +57,20 @@
 .line b{font:11px monospace;opacity:.6;margin-right:6px}.tr{color:#5EC4B6;font-family:Georgia,serif}
 .panel button.act{all:unset;cursor:pointer;background:#E9B53A;color:#14162B;border-radius:8px;padding:5px 10px;font-weight:600;margin-right:6px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
-</style>
-<div class="rib" id="rib" role="status" aria-live="polite"><div class="who"><span class="chip" id="chip">A</span><div><div class="o" id="o"></div></div></div><div class="t" id="t"></div><div class="u" id="u"></div></div>
-<div class="pill" id="pill"><span class="dot" id="dot"></span><span id="status">Chitter</span><button id="bVoice" title="Toggle English voice-over" aria-label="Toggle voice-over">Voice</button><button id="bNotes" aria-label="Open notes">Notes</button><button id="bHide" aria-label="Hide Chitter">×</button></div>
-<div class="toast" id="toast" role="alert"><span id="toastText"></span><br><button id="toastBtn">OK</button></div>
-<aside class="panel" id="panel" aria-label="Chitter notes"><button class="act" id="pClose">Close</button><button class="act" id="pWrite">Write notes</button><button class="act" id="pCopy">Copy Markdown</button><button class="act" id="pSave">Download .md</button>
-<div id="pBody"></div></aside>`;
+`;
+    root.append(style,
+      el('div', { class: 'rib', id: 'rib', role: 'status', 'aria-live': 'polite' },
+        el('div', { class: 'who' }, el('span', { class: 'chip', id: 'chip' }, 'A'), el('div', {}, el('div', { class: 'o', id: 'o' }))),
+        el('div', { class: 't', id: 't' }), el('div', { class: 'u', id: 'u' })),
+      el('div', { class: 'pill', id: 'pill' }, el('span', { class: 'dot', id: 'dot' }), el('span', { id: 'status' }, 'Chitter'),
+        el('button', { id: 'bVoice', title: 'Toggle voice-over', 'aria-label': 'Toggle voice-over' }, 'Voice'),
+        el('button', { id: 'bNotes', 'aria-label': 'Open notes' }, 'Notes'),
+        el('button', { id: 'bHide', 'aria-label': 'Hide Chitter' }, '×')),
+      el('div', { class: 'toast', id: 'toast', role: 'alert' }, el('span', { id: 'toastText' }), el('br'), el('button', { id: 'toastBtn' }, 'OK')),
+      el('aside', { class: 'panel', id: 'panel', 'aria-label': 'Chitter notes' },
+        el('button', { class: 'act', id: 'pClose' }, 'Close'), el('button', { class: 'act', id: 'pWrite' }, 'Write notes'),
+        el('button', { class: 'act', id: 'pCopy' }, 'Copy Markdown'), el('button', { class: 'act', id: 'pSave' }, 'Download .md'),
+        el('div', { id: 'pBody' })));
     const $ = id => root.getElementById(id);
     let hideTimer, reduce = matchMedia('(prefers-reduced-motion: reduce)').matches, mounted = false;
     const mount = () => { if (!mounted) { mounted = true; (document.body || document.documentElement).appendChild(host); } };
@@ -83,7 +97,12 @@
       reduce,
     };
     return api;
-  })();
+  })(); } catch (e) {
+    console.error('[Chitter] overlay failed to start:', e);
+    const noop = () => {};
+    ui = { applySettings: noop, show: noop, setTranslation: noop, status: noop, hidePill: noop, toast: (t) => console.warn('[Chitter]', t), onVoice: noop, onNotes: noop, onHide: noop,
+      panel: { body: document.createElement('div'), open: noop, close: noop, bind: noop }, reduce: false };
+  }
 
   // ---------------------------------------------------------------- on-device language tools
   let detectorP = null;
@@ -324,6 +343,7 @@
     () => ui.panel.close());
   ui.onNotes(() => { renderPanel(); ui.panel.open(); });
 
+  console.info('[Chitter] loaded on', location.host, '- waiting for a call');
   toBridge({ type: 'ready' });          // ask bridge.js for the saved settings
   window.__chitter = { pipelines, lines, dub };   // handy for debugging in DevTools
 })();
