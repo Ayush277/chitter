@@ -16,7 +16,7 @@ git push origin v0.1.0
 gh repo edit Ayush277/chitter --add-topic swift --add-topic macos --add-topic chrome-extension --add-topic speech-recognition \
   --add-topic live-captions --add-topic translation --add-topic on-device-ai --add-topic privacy --add-topic accessibility --add-topic meeting-notes
 
-# 3. publish the website (GitHub Pages, deployed by .github/workflows/pages.yml)
+# 3. publish the website (GitHub Pages, deployed by docs/github-workflows/pages.yml)
 gh api -X POST repos/Ayush277/chitter/pages -f build_type=workflow
 
 # 4. star it (so it is marked), then pin it on your profile (see below)
@@ -30,3 +30,6 @@ gh api -X PUT user/starred/Ayush277/chitter
 `scripts/release.sh Ayush277` fills the Homebrew cask with the real checksum.
 
 The app is not notarised; see the README for first-launch steps.
+
+## CI and Pages workflows
+The GitHub Actions files (`ci.yml`, `pages.yml`, `release.yml`) are stored in `docs/github-workflows/` so the first push needs no special token permission. To switch them on, run `gh auth refresh -s workflow`, then `mkdir -p .github && git mv docs/github-workflows .github/workflows`, commit and push.

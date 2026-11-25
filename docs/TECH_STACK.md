@@ -60,7 +60,7 @@ Everything Chitter uses, what it does there, and where to find it in the repo.
 | **Swift Testing** | Unit tests | `Tests/` |
 | **In-browser JS tests** | Extension logic, manifest, security rules | `extension/test/` |
 | **HTML + CSS + JS** | The website, no framework | `site/` |
-| **GitHub Pages / Actions** | Hosting and CI | `.github/workflows/` |
+| **GitHub Pages / Actions** | Hosting and CI | `docs/github-workflows/` |
 | **WebKit + AVFoundation** | Rendering the animated videos to MP4 | `video/render.swift` |
 
 ## Why this stack
