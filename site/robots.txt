@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://OWNER.github.io/chitter/sitemap.xml
+Sitemap: https://Ayush277.github.io/chitter/sitemap.xml

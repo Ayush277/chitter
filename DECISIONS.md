@@ -16,3 +16,4 @@
 2026-11-24 | Lighthouse not run (no node/npx on host); validated size, semantics, contrast tests, 390px overflow in the in-app browser | Spec Phase 7 fallback
 2026-11-24 | Name check: brew search chitter → no match; GitHub search → only Twitter-clone teaching repos and unrelated tools, no meeting/transcription product | Keep Chitter, repo slug chitter, bundle app.chitter.mac
 2026-11-24 | gh not installed → no repo created or pushed; docs/PUBLISH.md has the exact commands; site/cask use the placeholder OWNER | Decision table: gh not logged in
+2026-11-25 | Public repo: commits rewritten to author 'Ayush Kumar <Ayush277@users.noreply.github.com>' before the first push | Original author email was a local machine name (ayush@Ayushs-Mac-2.local); nothing had been pushed yet. Narration audio and duplicate MP4s are not tracked (site/media holds the published copies)

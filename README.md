@@ -1,56 +1,202 @@
-# Chitter
+<div align="center">
 
-*Catch every word. Keep what matters.*
+<img src="docs/assets/banner.svg" alt="Chitter: Catch every word. Keep what matters." width="100%">
 
-A free, open-source macOS menu-bar app. It shows live subtitles for any call or stream, speaks foreign-language speech aloud in your language, interprets your own voice into the call, and turns the meeting into notes where every decision links to the transcript line it came from. Local-first: by default nothing about your meetings leaves your Mac, and no bot joins the call.
+<br>
 
-Inspired by [Cicada](https://github.com/wquguru/cicada). Chitter is an original implementation with its own code and design.
+![macOS](https://img.shields.io/badge/macOS-14.4%2B-14162B?style=for-the-badge&logo=apple&logoColor=white)
+![Swift](https://img.shields.io/badge/Swift-6-F05138?style=for-the-badge&logo=swift&logoColor=white)
+![Chrome](https://img.shields.io/badge/Chrome_extension-139%2B-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)
+![On-device AI](https://img.shields.io/badge/AI-on--device-6A4FD6?style=for-the-badge)
+![Privacy](https://img.shields.io/badge/privacy-local--first-2E9C8E?style=for-the-badge)
+![License](https://img.shields.io/badge/license-Apache--2.0-E9B53A?style=for-the-badge)
 
-## What it does
-- **Starts by itself.** It watches which apps have the microphone open (Zoom, Teams, FaceTime, Slack, Discord, and Meet/Teams-web in Chrome, Safari, Edge, Firefox, Arc, Brave…). When a call begins, the subtitle ribbon pops up and the meeting is recorded; when the call ends, notes are finalised. Toggle in Settings → Languages → Calls.
-- **Live subtitles** for whatever your Mac plays, with the spoken language detected for every utterance, so a call can switch languages.
-- **Voice-over.** Foreign speech is translated and spoken in your language through the best installed macOS voice (Premium/Enhanced voices sound the most natural). If it falls behind, it speeds up slightly and then drops old lines instead of drifting.
-- **Interpret my voice.** Hold right ⌥, speak your language, and it is translated and spoken into the call through the free BlackHole 2ch virtual microphone.
-- **Notes with Pull the Thread.** Summary, decisions, action items and glossary written by Apple's on-device model (no API key), or Ollama, or an optional key you add, or an offline extractor. Hover a note to see a thread drawn to its source line.
-- **Records you own.** Plain Markdown/JSON/transcript files, misspelling-tolerant search, export to Markdown, SRT and Word.
-- **Privacy Ledger.** A window listing every network request the app makes. Default: "Nothing left your Mac."
+**A free, open-source assistant for calls: live subtitles, an English voice-over of foreign speech,<br>your own voice interpreted into the meeting, and notes that show where every decision came from.**
 
-## Chitter for Chrome (any OS)
-`extension/` is a Chrome extension (Windows, Linux, ChromeOS, Mac) that gives calls in the browser the same subtitles, English voice-over and notes, using only Chrome's on-device AI and sending nothing anywhere. It hooks the call's WebRTC audio, so it starts by itself on Meet, Teams, Zoom web, Webex and others, with one speaker per participant. See `extension/README.md`. **Status:** logic and a loopback WebRTC smoke test pass in Chrome 156; it has not been run in a real call.
+*No bot joins your meeting. By default, nothing about your meetings leaves your computer.*
 
-## Install (Mac app)
-Not notarised (no paid Apple developer account). Build it yourself or use a release:
+</div>
+
+---
+
+## 🎬 See it
+
+<div align="center">
+
+[![Chitter showcase video](docs/assets/showcase-thumb.png)](site/media/showcase.mp4)
+
+**▶ [Watch the showcase](site/media/showcase.mp4)** (38 s, music only, no voice) · **▶ [Narrated explainer](site/media/explainer.mp4)** (73 s, synthesized voice)
+
+</div>
+
+> [!NOTE]
+> Both videos are **animated illustrations** built from the app's real output (the transcript lines and notes shown are real results from a sample run). They are not screen recordings. Translation text shown in the subtitle example is illustrative.
+
+---
+
+## ✨ What it does
+
+<table>
+<tr>
+<td width="64"><img src="docs/assets/icons/auto.svg" width="56" alt=""></td>
+<td><b>Starts by itself</b><br>Notices when a call begins (Zoom, Teams, FaceTime, Slack, Discord, or Meet/Teams in any browser) and pops up. Ends and writes the notes when the call ends.</td>
+</tr>
+<tr>
+<td><img src="docs/assets/icons/subtitles.svg" width="56" alt=""></td>
+<td><b>Live subtitles</b><br>A slim ribbon over any call or stream, with the original and a translation. Language is detected for every sentence, so a call can switch languages mid-way.</td>
+</tr>
+<tr>
+<td><img src="docs/assets/icons/voice.svg" width="56" alt=""></td>
+<td><b>Voice-over</b><br>Foreign speech is translated and <i>spoken aloud</i> in your language through the best installed system voice. It speaks each finished sentence early and speeds up slightly instead of falling behind.</td>
+</tr>
+<tr>
+<td><img src="docs/assets/icons/translate.svg" width="56" alt=""></td>
+<td><b>Interpret my voice</b> <sub>(Mac app)</sub><br>Hold right ⌥, speak your language, and the translation is spoken into the call through a virtual microphone.</td>
+</tr>
+<tr>
+<td><img src="docs/assets/icons/notes.svg" width="56" alt=""></td>
+<td><b>Notes you can check</b><br>Summary, decisions and action items written by an on-device AI model. Every item links to the exact transcript line it came from.</td>
+</tr>
+<tr>
+<td><img src="docs/assets/icons/thread.svg" width="56" alt=""></td>
+<td><b>Pull the Thread</b><br>Hover or focus a note and an animated thread is drawn to its source line, so you can verify the AI instead of trusting it.</td>
+</tr>
+<tr>
+<td><img src="docs/assets/icons/privacy.svg" width="56" alt=""></td>
+<td><b>Privacy Ledger</b><br>A window listing every network request the app makes. Default result: <i>"Nothing left your Mac in this meeting."</i></td>
+</tr>
+</table>
+
+---
+
+## 🧭 How it works
+
+<div align="center"><img src="docs/assets/architecture.svg" alt="Chitter architecture diagram" width="100%"></div>
+
+1. **Capture**: the Mac app taps the sound your Mac plays (Core Audio); the Chrome extension takes each participant's audio track from the call's WebRTC connection.
+2. **Hear**: on-device speech recognition turns audio into text and detects the language.
+3. **Translate**: Apple's translation, or Apple's on-device language model, translates it.
+4. **Speak and show**: the subtitle ribbon updates and a natural system voice reads the translation.
+5. **Remember**: the transcript is saved as plain files and an on-device model writes notes whose items cite transcript lines.
+
+Details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+
+---
+
+## 🧰 Tech stack, simply
+
+| 🧱 Layer | 🔧 Technology | 📍 Where it is used |
+|---|---|---|
+| Mac app language | **Swift 6** + Swift Package Manager | All of `Sources/` (9 modules) |
+| Mac interface | **SwiftUI** + **AppKit** | Notes window, Settings, Privacy Ledger, onboarding; menu-bar item and floating ribbon |
+| Audio capture | **Core Audio** process tap, **AVFoundation** | `EchoAudio`: hears what the Mac plays, resamples to 16 kHz |
+| Call detection | **Core Audio** per-process "mic in use" flag | `EchoAudio/CallDetector.swift`: finds calls in apps and browser tabs, no extension needed |
+| Storage and search | Plain files + **SQLite FTS5** | `EchoCore`: Markdown/JSON meetings, misspelling-tolerant search |
+| Secrets | macOS **Keychain** | API keys (optional providers only) |
+| Chrome extension | **Manifest V3**, plain JavaScript, WebRTC hook | `extension/`: works on Windows, Linux, ChromeOS and Mac |
+| Website | Plain **HTML + CSS + JS** | `site/`: no framework, 20 KB, deployed with GitHub Pages |
+| Videos | Swift + **WebKit** + AVFoundation | `video/`: renders animation frames into MP4 |
+| Tests | **Swift Testing**, in-browser JS tests | `Tests/` (48 Swift tests), `extension/test/` (13 checks) |
+
+Full table with reasons: [`docs/TECH_STACK.md`](docs/TECH_STACK.md)
+
+---
+
+## 🤖 Where AI is used
+
+<img src="docs/assets/icons/ai.svg" width="40" align="left" alt="">&nbsp; Every model below runs **on your device** by default. Cloud providers are optional, off, and bring-your-own-key.
+
+| 🧠 Job | 🍎 Mac app | 🌐 Chrome extension |
+|---|---|---|
+| **Speech to text** | Apple SpeechAnalyzer, or **Whisper** (WhisperKit) | Chrome on-device `SpeechRecognition` |
+| **Which language?** | Whisper per-utterance detection + text check | `LanguageDetector` |
+| **Translation** | Apple Translation, or Apple's on-device **language model** | Chrome `Translator` |
+| **Notes (summary, decisions, actions)** | Apple on-device **language model** → Ollama → your own API key → offline rules | Chrome `LanguageModel` (Gemini Nano) → offline rules |
+| **Voice** | macOS speech synthesis | Browser `speechSynthesis` |
+
+**Making the AI trustworthy:** notes must come back as JSON; Chitter validates it, retries once, and **drops any item that cites a transcript line that doesn't exist**, so the model can't invent its sources.
+
+---
+
+## 🚀 Install and run
+
+### Mac app
+
 ```bash
-git clone <this repo> && cd chitter
-scripts/build.sh          # produces build/Chitter.app
-open build/Chitter.app    # first time: right-click → Open
+git clone https://github.com/Ayush277/chitter.git
+cd chitter
+scripts/build.sh            # builds build/Chitter.app (needs Xcode Command Line Tools)
+open build/Chitter.app      # first time: right-click → Open (the app is not notarized)
 ```
-Needs macOS 14.4+; the on-device translation and notes models need macOS 26 with Apple Intelligence. Requires the Command Line Tools (no full Xcode needed).
 
-## Measured on one Mac (Apple silicon, macOS 27.0.1) — `scripts/bench.sh`, 2026-11-24
+Click the menu-bar icon → **Try the sample meeting** to see everything work without a call. For real calls allow **System Audio Recording** and **Microphone** when asked. Needs macOS 14.4+; Apple's on-device translation and notes models need macOS 26 with Apple Intelligence.
+
+### Chrome extension (Windows, Linux, ChromeOS, Mac)
+
+1. Open `chrome://extensions` and switch on **Developer mode**.
+2. **Load unpacked** → choose the `extension/` folder.
+3. Reload your call tab, then join. Chrome 139+ is required. Details: [`extension/README.md`](extension/README.md).
+
+### Website
+
+```bash
+cd site && python3 -m http.server 8765      # then open http://localhost:8765
+```
+
+---
+
+## ✅ Measured results (and what isn't verified)
+
+Measured on one Mac (Apple silicon, macOS 27.0.1) with `scripts/bench.sh`, 2026-11-24:
+
 | Check | Result |
 |---|---|
-| Speech accuracy, 11.5 s English test clip | 2.6% word error rate, both Apple SpeechAnalyzer and WhisperKit base |
-| First subtitle after speech starts | Apple: 4.1 s (arrives in ~4 s sentence bursts). WhisperKit: 2.0 s. |
-| Foreign speech → English voice (6–8 s clips, warm model) | Chinese, Japanese, French and Spanish each detected, translated and voiced; 3.8–6.2 s from the clip's audio being received to the end of the spoken translation (Spanish is slowest because of the language re-check). In live use, finished sentences are spoken before the speaker stops. |
-| Translation step alone (Apple on-device model) | 1.4–2.0 s per sentence once warm; the very first call costs ~6 s while the model loads, so the app warms it up when a call starts |
-| Voice synthesis | 1.5–2.2 s per sentence |
-| 30-minute soak (looped test audio) | 584 sentences, no crash, no memory growth in Chitter's process |
-| App size | 9.8 MB (models download on demand) |
+| Speech accuracy, 11.5 s English test clip | 2.6% word error rate (Apple and WhisperKit base) |
+| First subtitle after speech starts | Apple 4.1 s (arrives in sentence bursts) · WhisperKit 2.0 s |
+| Foreign speech → English voice, warm model, 6–8 s clips | Chinese, Japanese, French, Spanish: 3.8–6.2 s to the end of the spoken translation |
+| Translation step (Apple on-device model) | 1.4–2.0 s per sentence once warm; first call ~6 s while the model loads |
+| 30-minute soak (looped test audio) | 584 sentences, no crash |
+| App size | 9.8 MB |
 
-Caveats, stated plainly:
-- The soak's CPU (0.9%) and memory (8–22 MB) cover **Chitter's process only**. Apple's speech recognizer runs in a separate system process that isn't included, so real system load is higher.
-- The targets of 1.5 s to first subtitle and 4 s interpreter round trip are **not met**. Translation with Apple's on-device model is the slowest step; installing Apple's Translation language packs should be much faster but wasn't tested here.
-- Language detection picked Latin for Spanish; a safeguard now re-checks likely languages, and Spanish then detected correctly. Whisper `base` transcribes Spanish and Japanese imperfectly; a larger Whisper model would be more accurate and slower.
-- **Not verified here:** live capture of real system audio (needs a permission I couldn't grant from a shell), auto-start during a real call (call detection was only run against the live system with no call active, plus unit tests), the microphone → BlackHole interpreter path, and how the app's windows look on screen.
+> [!WARNING]
+> **Honest status.** The soak's low CPU and memory cover Chitter's own process only, not Apple's separate speech process. The 1.5 s first-subtitle and 4 s interpreter targets are **not met**.
+> **Not yet verified:** live capture of real call audio on the Mac app, auto-start in a real call, the microphone → virtual-mic interpreter, and the Chrome extension in a real call after the latest fix. Unit tests, a WebRTC loopback test and real runs of the speech, translation, notes and voice steps pass. See [`docs/PROGRESS.md`](docs/PROGRESS.md) for every check.
 
-## Limitations
-- macOS only. Windows, Linux, Android and a browser extension are on the roadmap (`docs/ROADMAP.md`), not built.
-- Nobody on the call hears the voice-over: it plays on your speakers only. The original audio keeps playing underneath.
-- No voice cloning, no speaker names, no accounts, no cloud sync.
-- **Recording consent:** laws vary and many places require everyone's consent. You are responsible for telling people they are being transcribed.
+---
 
-## Docs
-`docs/ARCHITECTURE.md` · `docs/PRIVACY.md` · `docs/PROGRESS.md` (check results per phase) · `DECISIONS.md` · `docs/PUBLISH.md` · `THIRD_PARTY.md`
+## 📁 Project layout
 
-Apache-2.0.
+```text
+chitter/
+├── Sources/            Mac app: EchoCore · EchoAudio · EchoASR · EchoLang · EchoNotes · EchoVoice · EchoNet · EchoUI · EchoApp
+├── Tests/              Swift tests (48)
+├── extension/          Chrome extension (Manifest V3) + browser tests
+├── site/               The website (GitHub Pages)
+├── video/              Scripts that render the showcase and explainer videos
+├── scripts/            build · test · package · bench · fixtures
+├── docs/               Architecture, tech stack, project overview, privacy, progress log, roadmap
+└── DECISIONS.md        Every judgement call, with the reason
+```
+
+## 📚 Documentation
+
+| Document | What's in it |
+|---|---|
+| [`docs/PROJECT_OVERVIEW.md`](docs/PROJECT_OVERVIEW.md) | The idea, the thinking behind it, users, business angle |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Diagrams, modules, data flow, design choices |
+| [`docs/TECH_STACK.md`](docs/TECH_STACK.md) | Every technology, what it does, where it is used |
+| [`docs/PRIVACY.md`](docs/PRIVACY.md) | What stays on your device and how it is proven |
+| [`docs/PROGRESS.md`](docs/PROGRESS.md) | Check results per phase, including failures |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | What's next, including Windows and Linux |
+
+## ⚖️ Responsible use
+
+Laws about recording and transcribing calls vary, and many places require everyone's consent. Tell people you are transcribing. You are responsible for following the rules where you are.
+
+## 🙏 Credits and license
+
+Inspired by [Cicada](https://github.com/wquguru/cicada). Chitter is an original implementation: no code, text or art was copied. Uses [WhisperKit](https://github.com/argmaxinc/WhisperKit) (MIT). The optional BlackHole virtual microphone (GPL) is downloaded on request, never bundled. See [`THIRD_PARTY.md`](THIRD_PARTY.md).
+
+Licensed under **Apache-2.0**.
+
+<div align="center"><sub>Built by <a href="https://github.com/Ayush277">Ayush Kumar</a></sub></div>

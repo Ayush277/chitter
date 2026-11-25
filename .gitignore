@@ -4,3 +4,8 @@ dist/
 .env.build
 .DS_Store
 *.xcodeproj
+# generated video outputs (the published copies live in site/media/)
+video/*.mp4
+video/explainer/*.wav
+video/explainer/*.aiff
+video/explainer.html

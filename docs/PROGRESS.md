@@ -86,7 +86,7 @@ Measured on this host (Apple silicon, macOS 27.0.1), `Chitter --transcribe Resou
 - **Mixed-language calls:** auto mode now uses Whisper per-utterance detection. Implausible detections (Latin etc.) are re-decoded with likely languages and scored with NaturalLanguage. Spanish: Latin → es after the fix.
 - **Translation with no packs:** `AppleModelTranslator` uses the on-device language model. Real run: zh, ja, fr, es → English, 2.8–3.6 s each.
 - **Voice-over:** `DubQueue` speaks translated lines in order, speeds up to ~1.3× when behind, drops the oldest beyond 3 queued. Voice choice prefers Premium > Enhanced > default, then the user's region (the Mac here only had a default-quality voice). Playback to speakers **not listened to** in this session; synthesis produced audio of the expected length.
-- Tests: 52 pass.
+- Tests: 48 pass (counted by scripts/test.sh).
 
 ## Follow-up: faster voice-over + Chrome extension
 - **Speed:** measured the Apple on-device translator: first call 6.2 s (model load), then 1.1–1.6 s. The app now warms it up at call start and uses temperature 0. Warm results for 4 clips: translate 1.4–2.0 s (was 2.8–3.6 s), totals 3.8–6.2 s.

@@ -72,3 +72,6 @@ header{flex-wrap:wrap;gap:10px}nav{flex-wrap:wrap;gap:12px}
 .card{overflow-x:auto}.thread .card{overflow:visible}
 body{overflow-x:hidden}
 .copy{flex-wrap:wrap}.copy code{white-space:normal;word-break:break-all;min-width:0}
+
+.vid{margin:0;padding:12px}.vid video{width:100%;border-radius:10px;background:#000;display:block}.vid figcaption{font-size:14px;margin-top:8px;opacity:.85}
+.card img{display:block;margin-bottom:8px}
