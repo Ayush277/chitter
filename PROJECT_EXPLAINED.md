@@ -289,7 +289,7 @@ Most meeting-AI products are **cloud-based**, **bot-based** or **paid**. A free,
 | **Open core** | Free app; paid **team features**: managed deployment, shared glossaries, admin controls |
 | **On-premise and enterprise support** | Installation, audits, compliance documentation, support contracts |
 | **Premium voices and models** | Optional bring-your-own-key or paid natural voices and larger models |
-| **Education and accessibility licences** | Discounted plans for schools and non-profits |
+| **Education and accessibility plans** | Discounted plans for schools and non-profits |
 
 ### 10.5 Go-to-market ideas
 Open source on GitHub, Homebrew, a Chrome Web Store listing, demo videos, and posts in accessibility, language-learning and privacy communities.
