@@ -182,6 +182,7 @@ chitter/
 
 | Document | What's in it |
 |---|---|
+| [`PROJECT_EXPLAINED.md`](PROJECT_EXPLAINED.md) | **Everything in one file:** simple explanation, numbers, AI used, business, timeline, STAR resume format, interview answers |
 | [`docs/PROJECT_OVERVIEW.md`](docs/PROJECT_OVERVIEW.md) | The idea, the thinking behind it, users, business angle |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Diagrams, modules, data flow, design choices |
 | [`docs/TECH_STACK.md`](docs/TECH_STACK.md) | Every technology, what it does, where it is used |
