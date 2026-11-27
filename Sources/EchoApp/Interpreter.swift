@@ -21,16 +21,19 @@ struct VoiceKnotView: View {
     var body: some View {
         VStack(spacing: 6) {
             ZStack {
-                Circle().stroke(Tokens.weld.color.opacity(0.25), lineWidth: 6)
+                Circle().stroke(Tokens.cyan.color.opacity(0.2), lineWidth: 6)
                 Circle().trim(from: 0, to: CGFloat(min(1, m.level * 12)))
-                    .stroke(Tokens.weld.color, style: StrokeStyle(lineWidth: 6, lineCap: .round)).rotationEffect(.degrees(-90))
-                Circle().fill(m.active ? Tokens.madder.color : Tokens.woad.color).padding(14)
-                Image(systemName: "mic.fill").foregroundStyle(Tokens.textLight.color)
+                    .stroke(Tokens.cyan.color, style: StrokeStyle(lineWidth: 6, lineCap: .round)).rotationEffect(.degrees(-90))
+                    .shadow(color: Tokens.cyan.color.opacity(0.9), radius: 6)
+                Circle().fill(m.active ? Tokens.magenta.color : Tokens.raised.color).padding(14)
+                    .shadow(color: m.active ? Tokens.magenta.color.opacity(0.9) : .clear, radius: 10)
+                Image(systemName: "mic.fill").foregroundStyle(m.active ? Tokens.black.color : Tokens.cyan.color)
             }.frame(width: 64, height: 64).accessibilityHidden(true)
-            Text(m.state).font(.caption).foregroundStyle(Tokens.textLight.color)
-            if !m.route.isEmpty { Text(m.route).font(.caption2).foregroundStyle(Tokens.textLight.color.opacity(0.75)) }
+            Text(m.state).font(.system(.caption, design: .rounded).weight(.semibold)).foregroundStyle(Tokens.text.color)
+            if !m.route.isEmpty { Text(m.route).font(.caption2).foregroundStyle(Tokens.textDim.color) }
         }
-        .padding(12).background(RoundedRectangle(cornerRadius: 16).fill(Tokens.ink.color.opacity(0.92)))
+        .padding(12).neonCard(m.active ? Tokens.magenta.color : Tokens.cyan.color, radius: Tokens.Radius.panel, fill: Tokens.black.color.opacity(0.93))
+        .padding(8)
         .accessibilityElement(children: .combine).accessibilityLabel("Interpreter. \(m.state). \(m.route)")
     }
 }
@@ -183,12 +186,12 @@ final class Interpreter {
     // MARK: HUD
     private func showPanel(_ show: Bool) {
         if panel == nil {
-            let p = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 220, height: 130), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
-            p.level = .statusBar; p.isOpaque = false; p.backgroundColor = .clear; p.hasShadow = true
+            let p = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 270, height: 190), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+            p.level = .statusBar; p.isOpaque = false; p.backgroundColor = .clear; p.hasShadow = false      // the card draws its own glow
             p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]; p.isMovableByWindowBackground = true
             p.sharingType = .none
             p.contentView = NSHostingView(rootView: VoiceKnotView(m: model))
-            if let f = NSScreen.main?.visibleFrame { p.setFrameOrigin(NSPoint(x: f.maxX - 250, y: f.minY + 40)) }
+            if let f = NSScreen.main?.visibleFrame { p.setFrameOrigin(NSPoint(x: f.maxX - 300, y: f.minY + 40)) }
             panel = p
         }
         show ? panel?.orderFrontRegardless() : panel?.orderOut(nil)

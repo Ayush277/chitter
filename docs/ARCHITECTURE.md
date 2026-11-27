@@ -27,15 +27,15 @@ flowchart LR
     H --> I{{🧠 Notes model}}
     I --> J[📝 Notes + line references]
     H --> K[(🔎 SQLite search)]
-    classDef ai fill:#6A4FD6,stroke:#fff,color:#fff;
-    classDef io fill:#31A092,stroke:#fff,color:#14162B;
-    classDef store fill:#E9B53A,stroke:#14162B,color:#14162B;
+    classDef ai fill:#0B0B12,stroke:#A66BFF,stroke-width:3px,color:#F4F6FF;
+    classDef io fill:#0B0B12,stroke:#00E5FF,stroke-width:2px,color:#F4F6FF;
+    classDef store fill:#0B0B12,stroke:#FF2BD6,stroke-width:2px,color:#F4F6FF;
     class D,E,I ai;
     class B,C,F,G,J io;
     class H,K store;
 ```
 
-Purple boxes are AI models. They run on the device unless you add your own cloud key.
+Violet-edged boxes are AI models. They run on the device unless you add your own cloud key.
 
 ## 2. Auto-start: how it knows a call began
 
@@ -92,9 +92,9 @@ graph TD
     NOTES --> NET
     VOICE --> NET
     CORE --> NET
-    style NET fill:#2E9C8E,color:#14162B
-    style CORE fill:#E9B53A,color:#14162B
-    style APP fill:#4A5BB8,color:#fff
+    style NET fill:#0B0B12,stroke:#3DFFA8,color:#F4F6FF
+    style CORE fill:#0B0B12,stroke:#00E5FF,color:#F4F6FF
+    style APP fill:#0B0B12,stroke:#FF2BD6,color:#F4F6FF
 ```
 
 | Module | Job |
@@ -124,7 +124,7 @@ flowchart LR
     B[bridge.js - isolated world] <-->|settings| Page
     ST[(chrome.storage)] <--> B
     POP[Popup] --> ST
-    style Page fill:#1F2447,color:#ECE6D8
+    style Page fill:#0B0B12,stroke:#A66BFF,color:#F4F6FF
 ```
 
 - Starts **without a click**: a remote audio track appearing means a call is live.

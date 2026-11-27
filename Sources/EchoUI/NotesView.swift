@@ -17,12 +17,11 @@ struct ThreadKey: PreferenceKey {
 public struct NotesView: View {
     @ObservedObject var vm: NotesViewModel
     @FocusState private var searchFocused: Bool
-    @Environment(\.colorScheme) private var scheme
     public init(vm: NotesViewModel) { self.vm = vm }
 
-    var bg: Color { scheme == .dark ? Tokens.ink.color : Tokens.linen.color }
-    var surface: Color { scheme == .dark ? Tokens.woad.color : Tokens.bone.color }
-    var fg: Color { scheme == .dark ? Tokens.textLight.color : Tokens.textDark.color }
+    var bg: Color { Tokens.black.color }
+    var surface: Color { Tokens.surface.color }
+    var fg: Color { Tokens.text.color }
 
     public var body: some View {
         HStack(spacing: 0) {
@@ -39,6 +38,7 @@ public struct NotesView: View {
         }
         .background(bg)
         .frame(minWidth: 1000, minHeight: 600)
+        .neonRoot()
         .background(Button("Find") { searchFocused = true }.keyboardShortcut("f", modifiers: .command).opacity(0).accessibilityHidden(true))
         .onAppear { vm.startAutoRefresh(); vm.refreshEngineLabel() }
         .onDisappear { vm.stopAutoRefresh() }
@@ -53,7 +53,10 @@ struct Spool: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             TextField("Search all meetings", text: $vm.searchText)
-                .textFieldStyle(.roundedBorder)
+                .textFieldStyle(.plain)
+                .padding(.horizontal, 12).padding(.vertical, 7)
+                .background(Capsule(style: .circular).fill(Tokens.raised.color))
+                .overlay(Capsule(style: .circular).strokeBorder(Tokens.cyan.color.opacity(searchFocused.wrappedValue ? 0.95 : 0.4), lineWidth: 1.2).allowsHitTesting(false))
                 .focused(searchFocused)
                 .accessibilityLabel("Search all meetings")
             if !vm.hits.isEmpty {
@@ -66,17 +69,30 @@ struct Spool: View {
                             Text("\(h.meetingID.prefix(10)) · L\(h.lineID)\(h.fuzzy ? " · close match" : "")").font(.caption2).foregroundStyle(.secondary)
                         }
                     }.buttonStyle(.plain).accessibilityLabel("Match in line \(h.lineID): \(h.text)")
-                }.listStyle(.plain)
+                }.listStyle(.plain).scrollContentBackground(.hidden)
             } else {
                 Text("Meetings").font(.headline).foregroundStyle(fg)
-                List(selection: $vm.selectedID) {
+                List {
                     ForEach(vm.meetings, id: \.id) { m in
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(m.title).font(.system(.body, design: .serif))
+                            Text(m.title).font(.system(.body, design: .rounded))
                             Text(m.startedAt.formatted(date: .abbreviated, time: .shortened)).font(.caption).foregroundStyle(.secondary)
-                        }.tag(m.id as String?).accessibilityElement(children: .combine)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 10).padding(.vertical, 8)
+                        .background(RoundedRectangle(cornerRadius: Tokens.Radius.small, style: .continuous)
+                            .fill(vm.selectedID == m.id ? Tokens.cyan.color.opacity(0.14) : Tokens.raised.color))
+                        .overlay(RoundedRectangle(cornerRadius: Tokens.Radius.small, style: .continuous)
+                            .strokeBorder(Tokens.cyan.color.opacity(vm.selectedID == m.id ? 0.9 : 0.18), lineWidth: 1.2))
+                        .contentShape(Rectangle())
+                        .onTapGesture { vm.selectedID = m.id }
+                        .listRowSeparator(.hidden).listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 3, leading: 0, bottom: 3, trailing: 0))
+                        .accessibilityElement(children: .combine)
+                        .accessibilityAddTraits(vm.selectedID == m.id ? [.isButton, .isSelected] : .isButton)
+                        .accessibilityAction { vm.selectedID = m.id }
                     }
-                }.listStyle(.sidebar)
+                }.listStyle(.plain).scrollContentBackground(.hidden)
             }
         }
         .padding(12)
@@ -90,11 +106,9 @@ struct Warp: View {
     let fg: Color, surface: Color
     var body: some View {
         VStack(spacing: 0) {
-            Picker("Transcript shows", selection: $vm.transcriptMode) {
-                ForEach(SubtitleMode.allCases, id: \.self) { Text($0.label).tag($0) }
-            }
-            .pickerStyle(.segmented).labelsHidden().frame(maxWidth: 320).padding(.top, 10)
-            .accessibilityLabel("Transcript shows both languages, the translation, or the original")
+            NeonSegmented("Transcript shows both languages, the translation, or the original",
+                          options: SubtitleMode.allCases.map { ($0, $0.label) }, selection: $vm.transcriptMode)
+                .frame(maxWidth: 340).padding(.top, 10)
             list
         }
     }
@@ -126,14 +140,14 @@ struct Warp: View {
 struct WarpRow: View {
     let seg: Segment, active: Bool, fg: Color, big: Bool
     var mode: SubtitleMode = .both
-    @Environment(\.colorScheme) private var scheme
     var body: some View {
         let thread = Tokens.thread(seg.speaker)
         HStack(alignment: .top, spacing: 10) {
             VStack(spacing: 2) {   // the speaker "thread" gutter (shape + colour, never colour alone)
                 Text(Tokens.speakerInitial(seg.speaker)).font(.system(size: 10, weight: .bold, design: .rounded))
-                    .foregroundStyle(Tokens.ink.color).frame(width: 18, height: 18).background(Circle().fill(thread.color))
-                Rectangle().fill(thread.color).frame(width: 3)
+                    .foregroundStyle(Tokens.black.color).frame(width: 18, height: 18)
+                    .background(Circle().fill(thread.color).shadow(color: thread.color.opacity(0.8), radius: 5))
+                Capsule(style: .circular).fill(thread.color.opacity(0.8)).frame(width: 3)
             }.frame(width: 22)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
@@ -144,18 +158,21 @@ struct WarpRow: View {
                 let shown = mode.visible(original: seg.text, translation: seg.translation)
                 if let original = shown.original {
                     Text(original).font(.system(size: big ? 22 : 14))
-                        .underline(seg.confidence.map { $0 < 0.6 } ?? false, pattern: .dot, color: Tokens.madder.color)
+                        .underline(seg.confidence.map { $0 < 0.6 } ?? false, pattern: .dot, color: Tokens.red.color)
                         .foregroundStyle(fg)
                 }
                 if let t = shown.translation {
-                    Text(t).font(.system(size: big ? 22 : 14, design: .serif)).foregroundStyle(Tokens.translationText(dark: scheme == .dark).color)
+                    Text(t).font(.system(size: big ? 22 : 14, design: .rounded)).foregroundStyle(Tokens.mint.color)
                 }
             }
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 14).padding(.vertical, 6)
-        .background(active ? Tokens.weld.color.opacity(0.28) : Color.clear)
-        .overlay(alignment: .leading) { if active { Rectangle().fill(Tokens.weld.color).frame(width: 3) } }
+        .background(RoundedRectangle(cornerRadius: Tokens.Radius.small, style: .continuous)
+            .fill(active ? Tokens.magenta.color.opacity(0.18) : Color.clear))
+        .overlay(RoundedRectangle(cornerRadius: Tokens.Radius.small, style: .continuous)
+            .strokeBorder(Tokens.magenta.color.opacity(active ? 0.85 : 0), lineWidth: 1.5).allowsHitTesting(false))
+        .padding(.horizontal, 8)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Line \(seg.id), speaker \(Tokens.speakerInitial(seg.speaker)): \(seg.text)")
     }
@@ -165,7 +182,9 @@ struct InterpretedTag: View {
     var body: some View {
         Text("You · Interpreted").font(.caption2.weight(.semibold))
             .padding(.horizontal, 6).padding(.vertical, 1)
-            .background(Capsule().fill(Tokens.weld.color.opacity(0.3)))
+            .foregroundStyle(Tokens.yellow.color)
+            .background(Capsule(style: .circular).fill(Tokens.yellow.color.opacity(0.14)))
+            .overlay(Capsule(style: .circular).strokeBorder(Tokens.yellow.color.opacity(0.6), lineWidth: 1))
     }
 }
 
@@ -176,7 +195,6 @@ struct Weft: View {
     @ObservedObject var vm: NotesViewModel
     let fg: Color, surface: Color
     @FocusState private var focused: String?
-    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         ScrollView {
@@ -196,7 +214,7 @@ struct Weft: View {
                 }
                 if !vm.engineName.isEmpty { Text("Notes engine: \(vm.engineName)").font(.caption).foregroundStyle(fg.opacity(0.65)) }
                 if let n = vm.notes, !n.isEmpty {
-                    if !n.summary.isEmpty { section("Summary") { Text(n.summary).font(.system(.body, design: .serif)).foregroundStyle(fg) } }
+                    if !n.summary.isEmpty { section("Summary") { Text(n.summary).font(.system(.body, design: .rounded)).foregroundStyle(fg) } }
                     if !n.decisions.isEmpty {
                         section("Decisions") { ForEach(Array(n.decisions.enumerated()), id: \.offset) { i, d in
                             item(id: "d\(i)", text: d.text, lines: d.lines, meta: nil) } }
@@ -228,7 +246,7 @@ struct Weft: View {
 
     func section<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(.system(.title3, design: .serif).weight(.semibold)).foregroundStyle(fg).accessibilityAddTraits(.isHeader)
+            Text(title).font(.system(.title3, design: .rounded).weight(.semibold)).foregroundStyle(fg).accessibilityAddTraits(.isHeader)
             content()
         }
     }
@@ -238,13 +256,14 @@ struct Weft: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(text).multilineTextAlignment(.leading).foregroundStyle(fg)
                 HStack(spacing: 6) {
-                    if let meta, !meta.isEmpty { Text(meta).font(.caption).foregroundStyle(Tokens.translationText(dark: scheme == .dark).color) }
+                    if let meta, !meta.isEmpty { Text(meta).font(.caption).foregroundStyle(Tokens.mint.color) }
                     Text(lines.map { "L\($0)" }.joined(separator: " ")).font(.system(.caption2, design: .monospaced)).foregroundStyle(fg.opacity(0.55))
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(8)
-            .background(RoundedRectangle(cornerRadius: 8).fill(vm.activeLines == lines ? Tokens.weld.color.opacity(0.25) : Color.clear))
+            .neonCard(vm.activeLines == lines ? Tokens.magenta.color : Tokens.violet.color, radius: Tokens.Radius.small,
+                      fill: vm.activeLines == lines ? Tokens.magenta.color.opacity(0.16) : Tokens.raised.color)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -280,8 +299,8 @@ struct ThreadOverlay: View {
                         let r = geo[a]
                         ThreadShape(from: CGPoint(x: item.minX, y: item.midY), to: CGPoint(x: r.maxX - 6, y: r.midY))
                             .trim(from: 0, to: progress)
-                            .stroke(Tokens.weld.color, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
-                            .shadow(color: Tokens.weld.color.opacity(0.5), radius: 2)
+                            .stroke(Tokens.magenta.color, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                            .shadow(color: Tokens.magenta.color.opacity(0.9), radius: 6)
                     }
                 }
             }

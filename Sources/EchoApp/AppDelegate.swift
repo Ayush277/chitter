@@ -22,6 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var settingsWindow: HostedWindow!, ledgerWindow: HostedWindow!, onboardingWindow: HostedWindow!
 
     @MainActor func applicationDidFinishLaunching(_ notification: Notification) {
+        NSApp.appearance = NSAppearance(named: .darkAqua)      // the theme is black only; menus and alerts follow
         session = SessionController()
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         item.button?.setAccessibilityLabel("Chitter")
@@ -73,6 +74,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if !Prefs.onboarded { onboardingWindow.show() }
         session.onStateChange = { [weak self] in self?.refresh() }
         refresh()
+        // QA: `--snapshot-ui <folder>` draws every window with demo data into PNGs, then quits.
+        if let i = CommandLine.arguments.firstIndex(of: "--snapshot-ui"), i + 1 < CommandLine.arguments.count {
+            let dir = CommandLine.arguments[i + 1]
+            Task { await self.snapshotDemo(into: dir); NSApp.terminate(nil) }
+        }
         // QA: `--listen <seconds>` runs a real meeting on live system audio, then quits and prints where it was saved.
         if let i = CommandLine.arguments.firstIndex(of: "--listen"), i + 1 < CommandLine.arguments.count, let secs = Double(CommandLine.arguments[i + 1]) {
             Task {
@@ -103,22 +109,57 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// QA: draws Chitter's own views into PNG files (no screen recording needed, nothing else on screen is captured).
+    @MainActor func save<V: View>(_ view: V, _ size: NSSize, _ name: String, into dir: String) {
+        let host = NSHostingView(rootView: view.frame(width: size.width, height: size.height).background(Color.black))
+        let w = NSWindow(contentRect: NSRect(origin: NSPoint(x: -4000, y: -4000), size: size), styleMask: [.titled], backing: .buffered, defer: false)
+        w.appearance = NSAppearance(named: .darkAqua)
+        w.contentView = host; w.orderFrontRegardless()
+        RunLoop.current.run(until: Date().addingTimeInterval(1.2))
+        guard let rep = host.bitmapImageRepForCachingDisplay(in: host.bounds) else { return }
+        host.cacheDisplay(in: host.bounds, to: rep)
+        try? rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: dir).appendingPathComponent(name))
+        w.orderOut(nil)
+    }
+
     @MainActor func snapshot(into dir: String) {
-        func save<V: View>(_ view: V, _ size: NSSize, _ name: String) {
-            let host = NSHostingView(rootView: view.frame(width: size.width, height: size.height).background(Color(NSColor.windowBackgroundColor)))
-            let w = NSWindow(contentRect: NSRect(origin: NSPoint(x: -4000, y: -4000), size: size), styleMask: [.titled], backing: .buffered, defer: false)
-            w.contentView = host; w.orderFrontRegardless()
-            RunLoop.current.run(until: Date().addingTimeInterval(1.2))
-            guard let rep = host.bitmapImageRepForCachingDisplay(in: host.bounds) else { return }
-            host.cacheDisplay(in: host.bounds, to: rep)
-            try? rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: dir).appendingPathComponent(name))
-            w.orderOut(nil)
-        }
-        for tab in ["languages", "interpreting", "words"] {
+        for tab in ["languages", "interpreting", "words", "engines"] {
             settingsModel.tab = tab
-            save(SettingsView(model: settingsModel), NSSize(width: 732, height: 552), "settings-\(tab).png")
+            save(SettingsView(model: settingsModel), NSSize(width: 730, height: 560), "settings-\(tab).png", into: dir)
         }
-        save(session.livePanel.snapshotView(), NSSize(width: 340, height: 480), "live-panel.png")
+        save(session.livePanel.snapshotView(), NSSize(width: 340, height: 480), "live-panel.png", into: dir)
+    }
+
+    /// Demo content only (a throwaway meeting folder), so no real meeting ever appears in these pictures.
+    @MainActor func snapshotDemo(into dir: String) async {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("chitter-demo-\(UUID())")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = MeetingStore(root: root)
+        let lines = [Segment(id: 1, start: 3, end: 7, text: "Hemos decidido lanzar el viernes.", translation: "We have decided to launch on Friday.", language: "es"),
+                     Segment(id: 2, start: 10, end: 14, text: "Maria wird den Testbericht bis Donnerstag schicken.", translation: "Maria will send the test report by Thursday.", language: "de", speaker: 2),
+                     Segment(id: 3, start: 19, end: 22, text: "Great, let us review the budget next Monday.", translation: "Genial, revisemos el presupuesto el lunes.", language: "en", speaker: 1, interpreted: true)]
+        let notes = NotesResult(notes: ExtractiveNotes.generate(lines.map { var s = $0; s.text = s.interpreted == true ? s.text : (s.translation ?? s.text); return s }),
+                                provider: "demo", validShare: 1, attempts: [])
+        if let m = try? store.create(title: "Demo: launch planning") {
+            lines.forEach(m.append)
+            if let data = try? JSONEncoder().encode(notes.notes) { m.saveNotes(json: data, markdown: NotesValidator.markdown(notes.notes)) }
+            m.finish()
+        }
+        let vm = NotesViewModel(store: store, index: nil, engineLabel: { "demo" }, generate: { _ in notes })
+        vm.load(); vm.click(notes.notes.decisions.first?.lines ?? [1])
+        session.livePanel.model.lines = lines
+        settingsModel.healthProvider = { [weak self] in await self?.engineHealth() ?? [] }
+        settingsModel.refreshHealth(); settingsModel.refreshInterpreting()
+        try? await Task.sleep(nanoseconds: 2_000_000_000)
+        snapshot(into: dir)
+        save(NotesView(vm: vm), NSSize(width: 1180, height: 640), "notes.png", into: dir)
+        let ribbon = RibbonModel(); ribbon.fadeAfter = 120
+        ribbon.show(original: lines[0].text, translation: lines[0].translation, speaker: 0, isFinal: true)
+        save(ribbon.previewView().frame(maxWidth: .infinity, maxHeight: .infinity), NSSize(width: 760, height: 160), "ribbon.png", into: dir)
+        onboardingModel.step = 1
+        save(OnboardingView(model: onboardingModel, settings: settingsModel), NSSize(width: 600, height: 520), "welcome.png", into: dir)
+        save(LedgerView(model: ledgerModel), NSSize(width: 900, height: 420), "ledger.png", into: dir)
+        let knot = KnotModel(); knot.active = true; knot.level = 0.05; knot.state = "Listening…"; knot.route = "Routing to BlackHole 2ch"
+        save(VoiceKnotView(m: knot).frame(maxWidth: .infinity, maxHeight: .infinity), NSSize(width: 260, height: 190), "interpreter.png", into: dir)
     }
 
     @MainActor @objc func toggleLivePanel() { session.livePanel.toggle() }

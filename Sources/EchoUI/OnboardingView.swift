@@ -25,13 +25,12 @@ public final class OnboardingModel: ObservableObject {
 public struct OnboardingView: View {
     @ObservedObject var m: OnboardingModel
     @ObservedObject var settings: SettingsModel
-    @Environment(\.colorScheme) private var scheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     public init(model: OnboardingModel, settings: SettingsModel) { m = model; self.settings = settings }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text("Welcome to Chitter").font(.system(size: 30, design: .serif).weight(.bold))
+            Text("Welcome to Chitter").font(.system(size: 30, design: .rounded).weight(.bold))
             threads
             Group {
                 switch m.step {
@@ -44,19 +43,20 @@ public struct OnboardingView: View {
             HStack {
                 if m.step > 0 { Button("Back") { m.back() } }
                 Spacer()
-                if m.step < 3 { Button("Next") { m.next() }.keyboardShortcut(.defaultAction).disabled(m.step == 0 && !m.consent) }
-                else { Button("Done") { m.finish() }.keyboardShortcut(.defaultAction) }
+                if m.step < 3 { Button("Next") { m.next() }.buttonStyle(NeonButtonStyle(prominent: true)).keyboardShortcut(.defaultAction).disabled(m.step == 0 && !m.consent) }
+                else { Button("Done") { m.finish() }.buttonStyle(NeonButtonStyle(prominent: true)).keyboardShortcut(.defaultAction) }
             }
         }
         .padding(28).frame(width: 600, height: 520)
-        .background(scheme == .dark ? Tokens.ink.color : Tokens.linen.color)
+        .neonRoot()
     }
 
     var threads: some View {
         HStack(spacing: 6) {
             ForEach(0..<4, id: \.self) { i in
                 VStack(alignment: .leading, spacing: 4) {
-                    Capsule().fill(i <= m.step ? Tokens.weld.color : Tokens.bone.color.opacity(0.6)).frame(height: 5)
+                    Capsule(style: .circular).fill(i <= m.step ? Tokens.cyan.color : Tokens.raised.color).frame(height: 6)
+                        .shadow(color: i <= m.step ? Tokens.cyan.color.opacity(0.8) : .clear, radius: 5)
                         .animation(reduceMotion ? nil : .easeOut(duration: 0.3), value: m.step)
                     Text(LocalizedStringKey(m.steps[i])).font(.caption).foregroundStyle(i == m.step ? .primary : .secondary)
                 }
@@ -69,7 +69,7 @@ public struct OnboardingView: View {
             Text("Let Chitter hear your Mac").font(.title2.weight(.semibold))
             Text("Chitter listens to whatever your Mac plays — Zoom, Meet, YouTube — so no bot has to join. Audio is processed on this Mac. macOS will ask for “System Audio Recording” permission.")
             Button("Allow system audio") { m.allowAudio() }.disabled(m.audioDone)
-            if !m.audioMessage.isEmpty { Text(m.audioMessage).foregroundStyle(m.audioDone ? Tokens.translationText(dark: scheme == .dark).color : Tokens.madder.color) }
+            if !m.audioMessage.isEmpty { Text(m.audioMessage).foregroundStyle(m.audioDone ? Tokens.mint.color : Tokens.red.color) }
             GroupBox {
                 Toggle("I'll tell people when I'm transcribing a call. Laws differ — many places need everyone's consent — and I'm responsible for following them.", isOn: $m.consent)
                     .accessibilityHint("Required to continue")
@@ -85,7 +85,7 @@ public struct OnboardingView: View {
             }
             Picker("Show translation in", selection: $settings.targetLanguage) { ForEach(SettingsView.languages, id: \.0) { Text($0.1).tag($0.0) } }
             Text("Language detection runs on your Mac within a few seconds.").font(.caption).foregroundStyle(.secondary)
-        }.formStyle(.grouped)
+        }.formStyle(.grouped).scrollContentBackground(.hidden)
     }
 
     var engineStep: some View {
@@ -93,7 +93,7 @@ public struct OnboardingView: View {
             Text("Notes engine").font(.title2.weight(.semibold))
             Text("Chitter tries these in order and uses the first one that's ready. No account or payment needed.").foregroundStyle(.secondary)
             ForEach(m.health) { h in
-                HStack { Circle().fill(h.level == .ok ? Tokens.verdigris.color : h.level == .warn ? Tokens.weld.color : Tokens.madder.color).frame(width: 10, height: 10)
+                HStack { Circle().fill(h.level == .ok ? Tokens.mint.color : h.level == .warn ? Tokens.yellow.color : Tokens.red.color).frame(width: 10, height: 10)
                     Text(h.name).bold(); Text(h.detail).foregroundStyle(.secondary) }
                     .accessibilityElement(children: .combine)
             }
@@ -106,7 +106,7 @@ public struct OnboardingView: View {
             Text("Try it without a call").font(.title2.weight(.semibold))
             Text("Play a short sample meeting. You'll see live subtitles, then notes with every decision tied to the line it came from.")
             Button("Play the sample meeting") { m.playSample() }
-            Text("Nothing left your Mac.").font(.system(.callout, design: .serif).italic()).foregroundStyle(.secondary)
+            Text("Nothing left your Mac.").font(.system(.callout, design: .rounded).italic()).foregroundStyle(.secondary)
         }
     }
 }
@@ -123,6 +123,7 @@ public final class HostedWindow {
         if window == nil {
             let w = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
             w.title = title; w.contentView = NSHostingView(rootView: make()); w.isReleasedWhenClosed = false; w.center()
+            NeonWindow.apply(to: w)
             window = w
         }
         if hide { ScreenShareSafety.apply(to: window!, hidden: true) }

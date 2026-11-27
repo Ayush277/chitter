@@ -40,6 +40,7 @@ public final class NotesWindowController {
             w.title = "Chitter — Notes"
             w.contentView = NSHostingView(rootView: NotesView(vm: vm))
             w.isReleasedWhenClosed = false
+            NeonWindow.apply(to: w)
             w.center()
             window = w
         }

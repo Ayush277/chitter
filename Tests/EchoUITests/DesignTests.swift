@@ -4,24 +4,18 @@ import EchoCore
 import EchoNotes
 @testable import EchoUI
 
-/// Spec §4.3: body-text pairs must meet WCAG AA (4.5:1).
+/// Body-text pairs must meet WCAG AA (4.5:1), including every neon colour used as text.
 @Test func bodyTextPairsMeetAA() {
-    let pairs: [(String, Tokens.Hex, Tokens.Hex)] = [
-        ("text-light on ink", Tokens.textLight, Tokens.ink), ("text-light on woad", Tokens.textLight, Tokens.woad),
-        ("text-dark on linen", Tokens.textDark, Tokens.linen), ("text-dark on bone", Tokens.textDark, Tokens.bone),
-        ("ink on weld (primary button)", Tokens.ink, Tokens.weld),
-        ("verdigris on ink (translation)", Tokens.verdigris, Tokens.ink),
-        ("verdigris on woad (translation)", Tokens.verdigris, Tokens.woad),
-        ("verdigris-deep on linen (translation, light)", Tokens.verdigrisDeep, Tokens.linen),
-        ("verdigris-deep on bone (translation, light)", Tokens.verdigrisDeep, Tokens.bone),
-        ("indigo-dye links on linen", Tokens.indigoDye, Tokens.linen),
-        ("weld on ink", Tokens.weld, Tokens.ink),
-    ]
-    for (name, a, b) in pairs { #expect(a.contrast(with: b) >= 4.5, "\(name) = \(a.contrast(with: b))") }
+    let backgrounds: [(String, Tokens.Hex)] = [("black", Tokens.black), ("surface", Tokens.surface), ("raised", Tokens.raised)]
+    let texts: [(String, Tokens.Hex)] = [("text", Tokens.text), ("dim", Tokens.textDim), ("cyan", Tokens.cyan), ("magenta", Tokens.magenta),
+        ("mint", Tokens.mint), ("yellow", Tokens.yellow), ("red", Tokens.red), ("violet", Tokens.violet), ("orange", Tokens.orange)]
+    for (bn, bg) in backgrounds {
+        for (tn, fg) in texts { #expect(fg.contrast(with: bg) >= 4.5, "\(tn) on \(bn) = \(fg.contrast(with: bg))") }
+    }
 }
-@Test func madderIsLargeTextOrNonTextOnly() {
-    let c = Tokens.madder.contrast(with: Tokens.ink)
-    #expect(c >= 3.0, "madder on ink must pass the large-text/non-text bar, got \(c)")
+/// Filled neon buttons, chips and speaker badges carry black labels.
+@Test func blackLabelsOnNeonFillsMeetAA() {
+    for fill in Tokens.speakerThreads + [Tokens.red] { #expect(Tokens.black.contrast(with: fill) >= 4.5) }
 }
 @Test func speakerThreadsAreDistinctAndWrap() {
     #expect(Set(Tokens.speakerThreads.map { "\($0.r)\($0.g)\($0.b)" }).count == 6)

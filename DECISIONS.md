@@ -21,3 +21,5 @@
 2026-11-27 | "Caption this tab" (tabCapture, needs a click) added beside the automatic WebRTC path | Covers sites that don't deliver call audio as WebRTC tracks
 2026-11-27 | Own-voice option is macOS Personal Voice, not a paid cloning API | Free and on-device; limited to the languages it was recorded in
 2026-11-27 | If translation fails while interpreting, send nothing | Speaking untranslated words into a call is worse than silence
+2026-11-27 | Neon-on-black theme replaces the earlier palette, and the light appearance is removed | Requested redesign; one dark theme keeps every neon colour readable (contrast-tested)
+2026-11-27 | Settings tabs and segmented controls are custom views | The system versions can't take capsule shapes or the neon tint; menus, alerts, file dialogs, pop-up lists and window frames remain macOS's own

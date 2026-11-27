@@ -42,7 +42,7 @@ The simple explanation, the system design, the engineering stack, where AI is us
 | **Two clients** | 🍎 a native **desktop application** (macOS) and 🌐 a **browser extension** (Chrome, for Windows, Linux, ChromeOS and Mac), sharing one architecture |
 | **Key engineering constraint** | **On-device processing.** No meeting bot, no server, no account. By default nothing about a meeting leaves the machine, and a built-in ledger proves it |
 | **My role** | Software engineer: requirements, architecture, implementation, testing, performance measurement, packaging and documentation, end to end |
-| **Scale** | ~5,000 lines of code across 5 languages, 9 backend-style modules, 61 automated checks |
+| **Scale** | ~5,000 lines of code across 5 languages, 9 backend-style modules, 74 automated checks (58 Swift tests and 16 browser checks) |
 | **Repo** | https://github.com/Ayush277/chitter |
 
 ---
@@ -201,9 +201,9 @@ Audio capture, call detection, voice-activity detection, search, storage, export
 ### 8.1 Size of the project (counted from the repo)
 | Metric | Value |
 |---|---|
-| Application code | **4,564 lines** in **50 files**, **9 modules** |
-| Automated Swift tests | **505 lines**, **58 tests** |
-| Browser extension (code + tests) | **797 lines** of JavaScript, **16 browser checks** + a WebRTC smoke test |
+| Application code | **4,787 lines** in **51 files**, **9 modules** |
+| Automated Swift tests | **499 lines**, **58 tests** |
+| Browser extension (code + tests) | **798 lines** of JavaScript, **16 browser checks** + a WebRTC smoke test |
 | Website | **274 lines** (HTML, CSS, JS), about **25 KB**, no framework |
 | Documentation | **739+ lines** of Markdown |
 | Interface strings | **97** in a localisation catalog (English complete; 4 more languages scaffolded for review) |
@@ -212,7 +212,7 @@ Audio capture, call detection, voice-activity detection, search, storage, export
 | Commits | **21** |
 | Logged design decisions | **22** in `DECISIONS.md` |
 
-Lines per module: `EchoUI` 1,240 · `EchoApp` 1,100 · `EchoCore` 606 · `EchoAudio` 388 · `EchoVoice` 334 · `EchoASR` 283 · `EchoNotes` 281 · `EchoNet` 191 · `EchoLang` 141.
+Lines per module: `EchoUI` 1,419 · `EchoApp` 1,144 · `EchoCore` 606 · `EchoAudio` 388 · `EchoVoice` 334 · `EchoASR` 283 · `EchoNotes` 281 · `EchoNet` 191 · `EchoLang` 141.
 
 ### 8.2 Performance (one Mac: Apple silicon, macOS 27.0.1)
 | Metric | Result | Note |
@@ -322,6 +322,8 @@ Open source on GitHub, Homebrew, a Chrome Web Store listing, demo videos, and po
 | 2026-11-25 | **First real-use bug fixed.** Extension crashed on Google Meet (Trusted Types); reproduced in a test, fixed, regression-tested. Added "caption my own voice" |
 | 2026-11-25 | **Videos, documentation and public release** on GitHub |
 | 2026-11-27 | **Live capture fixed.** A mistyped Core Audio key meant the desktop app had received no audio; after the fix, live subtitles and notes worked on audio played on the Mac |
+| 2026-11-27 | **Vertical reel.** A 70-second social-style explainer with timed captions, real app screens and an honest list of limits (`video/reel/`) |
+| 2026-11-27 | **Neon redesign.** Black theme with neon accents and rounded shapes across the app, extension, website, graphics and videos |
 | 2026-11-27 | **Meeting features.** Hands-free interpreting, interpreted lines in the transcript, display modes, live panel, voice and mic pickers, word list, notes language; extension rebuilt around one recogniser plus tab capture |
 
 **Next:** verify real-call capture on more machines, faster voice-over with installed translation packs, a Chrome Web Store release and a Windows client. See [`docs/ROADMAP.md`](docs/ROADMAP.md).
@@ -365,7 +367,7 @@ Open source on GitHub, Homebrew, a Chrome Web Store listing, demo videos, and po
 - **S:** The colour palette looked fine but readability was untested.
 - **T:** Meet the WCAG AA contrast ratio (4.5:1) for body text.
 - **A:** Wrote an automated test over every text-and-background pair.
-- **R:** It caught two failures (4.47:1 on dark and 2.9:1 on light); I adjusted one colour and added a darker variant for light surfaces, and the test now passes.
+- **R:** On the first design it caught two failures (4.47:1 on dark and 2.9:1 on light), which I fixed. When I later moved to the neon-on-black theme, the same kind of test checked all 9 text colours against all 3 black surfaces, plus black labels on neon buttons.
 
 **Designing for failure**
 - **S:** AI models and free API tiers can be missing, slow or rate-limited.

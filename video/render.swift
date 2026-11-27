@@ -1,4 +1,5 @@
 // Renders video/showcase.html to an MP4 (30 fps, 1920x1080) with a synthesized music bed. macOS only, no ffmpeg.
+// Env: CHITTER_DUR, CHITTER_NARRATION, CHITTER_BELLS=0, CHITTER_BELL_AT, CHITTER_SIZE.
 // Usage: swiftc -O render.swift -o /tmp/render-video && /tmp/render-video showcase.html out.mp4 [fromSecond toSecond]
 import AppKit
 import WebKit
@@ -6,7 +7,9 @@ import AVFoundation
 import CoreVideo
 
 let env = ProcessInfo.processInfo.environment
-let W = 1920, H = 1080, FPS = 30
+// CHITTER_SIZE=1080x1920 renders a vertical video.
+let SIZE = (env["CHITTER_SIZE"] ?? "1920x1080").split(separator: "x").compactMap { Int($0) }
+let W = SIZE[0], H = SIZE[1], FPS = 30
 let DUR = Double(env["CHITTER_DUR"] ?? "") ?? 38.0
 let NARRATION = env["CHITTER_NARRATION"]
 let BELLS = env["CHITTER_BELLS"] != "0"
@@ -42,6 +45,8 @@ func makeAudio(to url: URL) {
             L[idx] += v; R[idx] += v
         }
     }
+    // CHITTER_BELL_AT="3.5,9.0" places soft chimes at chosen moments instead of the showcase's defaults.
+    for t in (env["CHITTER_BELL_AT"] ?? "").split(separator: ",").compactMap({ Double($0) }) { bell(t, 987.77, 0.11) }
     if BELLS { for (t, f) in [(1.0, 880.0), (2.3, 659.25), (5.2, 784.0), (8.6, 784.0), (13.6, 659.25), (16.6, 880.0), (19.4, 987.77), (22.2, 1174.66), (26.3, 659.25), (28.0, 880.0), (31.2, 784.0), (33.7, 1318.5), (34.8, 880.0)] { bell(t, f) } }
     if let path = NARRATION, let nf = try? AVAudioFile(forReading: URL(fileURLWithPath: path)),
        let nb = AVAudioPCMBuffer(pcmFormat: nf.processingFormat, frameCapacity: AVAudioFrameCount(nf.length)) {
@@ -104,6 +109,10 @@ Task { @MainActor in
     let wav = FileManager.default.temporaryDirectory.appendingPathComponent("chitter-music.wav")
     try? FileManager.default.removeItem(at: silent)
     let r = Renderer(); await r.load()
+    // A page whose script failed to load would otherwise render as a "successful" blank video.
+    guard (try? await r.web.evaluateJavaScript("typeof window.__render")) as? String == "function" else {
+        print("error: the page has no window.__render; check it for script errors"); exit(1)
+    }
     let writer = try! AVAssetWriter(outputURL: silent, fileType: .mp4)
     let input = AVAssetWriterInput(mediaType: .video, outputSettings: [AVVideoCodecKey: AVVideoCodecType.h264, AVVideoWidthKey: W, AVVideoHeightKey: H,
         AVVideoCompressionPropertiesKey: [AVVideoAverageBitRateKey: 14_000_000, AVVideoProfileLevelKey: AVVideoProfileLevelH264HighAutoLevel]])

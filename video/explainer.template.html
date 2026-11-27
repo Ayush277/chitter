@@ -1,26 +1,47 @@
 <!doctype html>
 <html><head><meta charset="utf-8">
 <style>
-html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#14162B}
-#root{position:relative;width:1920px;height:1080px;overflow:hidden;background:#14162B;color:#ECE6D8;font-family:"Helvetica Neue",Arial,sans-serif}
-.abs{position:absolute}.serif{font-family:Georgia,"Times New Roman",serif}.mono{font-family:Menlo,Courier,monospace}
-.warp{position:absolute;inset:0;background-image:repeating-linear-gradient(90deg,transparent 0 95px,rgba(236,230,216,.045) 95px 96px)}
+html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#000000}
+#root{position:relative;width:1920px;height:1080px;overflow:hidden;background:#000000;color:#F4F6FF;font-family:"Helvetica Neue",Arial,sans-serif}
+.abs{position:absolute}.serif{font-family:ui-rounded,"SF Pro Rounded",system-ui,sans-serif}.mono{font-family:Menlo,Courier,monospace}
+.warp{position:absolute;inset:0;background-image:repeating-linear-gradient(90deg,transparent 0 95px,rgba(244,246,255,.045) 95px 96px)}
 .scene{position:absolute;inset:0;display:none}
-.tile{position:absolute;width:420px;height:250px;border-radius:22px;background:#1F2447;box-shadow:0 20px 50px rgba(0,0,0,.4);overflow:hidden}
-.av{position:absolute;left:50%;top:44%;width:110px;height:110px;margin:-55px 0 0 -55px;border-radius:50%;display:grid;place-items:center;font:700 52px Georgia,serif;color:#14162B}
+.tile{position:absolute;width:420px;height:250px;border-radius:22px;background:#0B0B12;box-shadow:0 20px 50px rgba(0,0,0,.4);overflow:hidden}
+.av{position:absolute;left:50%;top:44%;width:110px;height:110px;margin:-55px 0 0 -55px;border-radius:50%;display:grid;place-items:center;font:700 52px ui-rounded,system-ui,sans-serif;color:#000000}
 .nm{position:absolute;left:16px;bottom:12px;font-size:20px;opacity:.85}
-.bub{position:absolute;padding:14px 22px;border-radius:22px;background:#ECE6D8;color:#14162B;font-size:30px;white-space:nowrap;box-shadow:0 12px 30px rgba(0,0,0,.4)}
-.node{position:absolute;width:150px;height:150px;border-radius:50%;border:5px solid rgba(236,230,216,.28);display:grid;place-items:center;font-size:56px;background:#1F2447}
+.bub{position:absolute;padding:14px 22px;border-radius:22px;background:#F4F6FF;color:#000000;font-size:30px;white-space:nowrap;box-shadow:0 12px 30px rgba(0,0,0,.4)}
+.node{position:absolute;width:150px;height:150px;border-radius:50%;border:5px solid rgba(244,246,255,.28);display:grid;place-items:center;font-size:56px;background:#0B0B12}
 .lab{position:absolute;width:300px;text-align:center;font-size:28px;font-weight:700}
-.smp{position:absolute;width:300px;text-align:center;font:26px Georgia,serif}
-.row{position:absolute;left:150px;width:760px;padding:10px 16px 10px 20px;font-size:27px;line-height:1.3;border-left:5px solid #2E9C8E;border-radius:4px;box-sizing:border-box}
+.smp{position:absolute;width:300px;text-align:center;font:26px ui-rounded,system-ui,sans-serif}
+.row{position:absolute;left:150px;width:760px;padding:10px 16px 10px 20px;font-size:27px;line-height:1.3;border-left:5px solid #00E5FF;border-radius:4px;box-sizing:border-box}
 .row b{font:600 16px Menlo,monospace;opacity:.6;margin-right:10px}
-.item{position:absolute;left:1000px;width:760px;padding:12px 18px;font-size:26px;line-height:1.3;border-radius:10px;border:1.5px solid rgba(236,230,216,.22);box-sizing:border-box}
+.item{position:absolute;left:1000px;width:760px;padding:12px 18px;font-size:26px;line-height:1.3;border-radius:10px;border:1.5px solid rgba(244,246,255,.22);box-sizing:border-box}
 .item small{font:15px Menlo,monospace;opacity:.6;margin-left:8px}
-.h{position:absolute;font:700 32px Georgia,serif;color:#E9B53A}
-.tag{position:absolute;font:600 24px Menlo,monospace;letter-spacing:4px;color:#31A092}
+.h{position:absolute;font:700 32px ui-rounded,system-ui,sans-serif;color:#00E5FF}
+.tag{position:absolute;font:600 24px Menlo,monospace;letter-spacing:4px;color:#3DFFA8}
 #cap{position:absolute;left:0;width:1920px;bottom:48px;text-align:center}
-#cap span{display:inline-block;max-width:1500px;background:rgba(10,11,28,.78);padding:14px 28px;border-radius:16px;font-size:34px;line-height:1.35}
+#cap span{display:inline-block;max-width:1500px;background:rgba(0,0,0,.78);padding:14px 28px;border-radius:16px;font-size:34px;line-height:1.35}
+
+/* neon night: black stage, neon edges, rounded everything */
+#root{background:radial-gradient(900px 620px at 6% 0,rgba(0,229,255,.17),transparent 70%),radial-gradient(900px 620px at 98% 30%,rgba(255,43,214,.15),transparent 70%),radial-gradient(1000px 600px at 45% 105%,rgba(166,107,255,.16),transparent 70%),#000!important}
+.tile{border:2px solid rgba(0,229,255,.45);border-radius:38px!important}
+.row{border:2px solid rgba(0,229,255,.28);border-radius:24px!important;background:#0B0B12}
+.item{border:2px solid rgba(166,107,255,.55)!important;border-radius:24px!important}
+.node{box-shadow:0 0 22px rgba(0,229,255,.2)}
+#rib,#rib2{border:2px solid rgba(0,229,255,.7)!important;border-radius:44px!important;box-shadow:0 0 60px rgba(0,229,255,.35)!important}
+#s4 .abs[style*="width:1200px"]{border:2px solid rgba(0,229,255,.7)!important;border-radius:44px!important;box-shadow:0 0 60px rgba(0,229,255,.35)!important}
+#s2 .abs[style*="width:1500px;height:560px"]{border:2px solid rgba(166,107,255,.6);border-radius:48px!important;box-shadow:0 0 70px rgba(166,107,255,.28)!important}
+#mac{border:2px solid rgba(166,107,255,.7)!important;border-radius:40px!important;box-shadow:0 0 70px rgba(166,107,255,.28)}
+#s4card,#card6{border:2px solid rgba(61,255,168,.65);border-radius:48px!important;box-shadow:0 0 70px rgba(61,255,168,.25)!important}
+#rc{border:2px solid rgba(61,255,168,.65);border-radius:40px;box-shadow:0 0 60px rgba(61,255,168,.22)!important}
+#toast{border:2px solid #FF2BD6!important;border-radius:36px!important;box-shadow:0 0 50px rgba(255,43,214,.35)!important}
+#d1{border:2px solid rgba(0,229,255,.65);border-radius:40px!important;box-shadow:0 0 50px rgba(0,229,255,.25)!important}
+#d2{border:2px solid rgba(255,43,214,.65);border-radius:40px!important;box-shadow:0 0 50px rgba(255,43,214,.25)!important}
+.bub{box-shadow:0 0 30px rgba(0,229,255,.5)!important;border-radius:999px!important}
+#cap span{border:1.5px solid rgba(166,107,255,.55);border-radius:999px!important}
+#ul,#ul4{background:linear-gradient(90deg,#00E5FF,#FF2BD6)!important;border-radius:999px;box-shadow:0 0 16px #00E5FF}
+#t1,#e1,#t7{background:linear-gradient(95deg,#00E5FF,#FF2BD6);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800}
+#logo,#logo7{filter:drop-shadow(0 0 18px rgba(0,229,255,.8))}
 </style></head>
 <body><div id="root"><div class="warp"></div>
 
@@ -31,27 +52,27 @@ html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#14162B
 <!-- 1 listens -->
 <div id="s1" class="scene">
   <div class="tag" style="left:90px;top:70px">01 · IT LISTENS TO YOUR MAC</div>
-  <div class="abs" id="mac" style="left:260px;top:210px;width:1400px;height:640px;border-radius:26px;background:#1b1e3a;border:3px solid rgba(236,230,216,.2)">
-    <div class="abs" style="left:0;top:0;width:1400px;height:46px;border-radius:24px 24px 0 0;background:rgba(236,230,216,.1)"></div>
+  <div class="abs" id="mac" style="left:260px;top:210px;width:1400px;height:640px;border-radius:26px;background:#07070C;border:3px solid rgba(244,246,255,.2)">
+    <div class="abs" style="left:0;top:0;width:1400px;height:46px;border-radius:24px 24px 0 0;background:rgba(244,246,255,.1)"></div>
     <div class="abs mono" style="left:24px;top:10px;font-size:20px;opacity:.7"> Zoom   Meet   YouTube</div>
-    <div class="abs" id="mbicon" style="left:1318px;top:6px;width:34px;height:34px"><svg viewBox="0 0 32 32" width="34" height="34"><circle cx="16" cy="16" r="12.5" fill="none" stroke="#E9B53A" stroke-width="2.6"/><path d="M8 16c3-8 5 8 8 0s5 8 8 0" fill="none" stroke="#ECE6D8" stroke-width="2.4" stroke-linecap="round"/></svg></div>
-    <svg class="abs" id="spk" style="left:140px;top:190px" width="200" height="200" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z" fill="#ECE6D8"/></svg>
+    <div class="abs" id="mbicon" style="left:1318px;top:6px;width:34px;height:34px"><svg viewBox="0 0 32 32" width="34" height="34"><circle cx="16" cy="16" r="12.5" fill="none" stroke="#00E5FF" stroke-width="2.6"/><path d="M8 16c3-8 5 8 8 0s5 8 8 0" fill="none" stroke="#F4F6FF" stroke-width="2.4" stroke-linecap="round"/></svg></div>
+    <svg class="abs" id="spk" style="left:140px;top:190px" width="200" height="200" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z" fill="#F4F6FF"/></svg>
     <svg class="abs" id="waves" style="left:350px;top:210px" width="700" height="160"></svg>
-    <div class="abs serif" id="nobot" style="left:830px;top:380px;width:480px;text-align:center;font-size:44px;font-style:italic;color:#E9B53A">no bot joins<br>your meeting</div>
+    <div class="abs serif" id="nobot" style="left:830px;top:380px;width:480px;text-align:center;font-size:44px;color:#00E5FF">no bot joins<br>your meeting</div>
     <svg class="abs" id="bot" style="left:1010px;top:420px;display:none" width="1" height="1"></svg>
   </div>
 </div>
 <!-- 2 detects -->
 <div id="s2" class="scene">
   <div class="tag" style="left:90px;top:70px">02 · IT WAKES UP BY ITSELF</div>
-  <div class="abs" style="left:0;top:0;width:1920px;height:56px;background:rgba(236,230,216,.1)"></div>
+  <div class="abs" style="left:0;top:0;width:1920px;height:56px;background:rgba(244,246,255,.1)"></div>
   <div class="abs" id="apps"></div>
-  <div class="abs" id="toast" style="left:1220px;top:90px;width:620px;padding:22px 26px;border-radius:20px;background:#1F2447;border-left:8px solid #E9B53A;box-shadow:0 20px 50px rgba(0,0,0,.5)">
+  <div class="abs" id="toast" style="left:1220px;top:90px;width:620px;padding:22px 26px;border-radius:20px;background:#0B0B12;border-left:8px solid #00E5FF;box-shadow:0 20px 50px rgba(0,0,0,.5)">
     <div class="serif" style="font-size:36px;font-weight:700">Call detected</div>
     <div id="toastsub" style="font-size:26px;opacity:.8;margin-top:6px">Zoom is using the microphone</div></div>
-  <div class="abs" id="rib2" style="left:360px;top:760px;width:1200px;padding:24px 34px;border-radius:24px;background:rgba(20,22,43,.95);box-shadow:0 20px 60px rgba(0,0,0,.5);border:1px solid rgba(236,230,216,.15)">
-    <div style="display:flex;gap:18px;align-items:center"><div class="serif" style="width:42px;height:42px;border-radius:21px;background:#E9B53A;color:#14162B;text-align:center;line-height:42px;font-weight:700;font-size:24px">A</div><div style="font-size:34px;opacity:.75">Subtitles are on…</div></div>
-    <div style="height:5px;background:#E9B53A;margin-top:14px;width:40%"></div></div>
+  <div class="abs" id="rib2" style="left:360px;top:760px;width:1200px;padding:24px 34px;border-radius:24px;background:rgba(6,6,12,.95);box-shadow:0 20px 60px rgba(0,0,0,.5);border:1px solid rgba(244,246,255,.15)">
+    <div style="display:flex;gap:18px;align-items:center"><div class="serif" style="width:42px;height:42px;border-radius:21px;background:#00E5FF;color:#000000;text-align:center;line-height:42px;font-weight:700;font-size:24px">A</div><div style="font-size:34px;opacity:.75">Subtitles are on…</div></div>
+    <div style="height:5px;background:#00E5FF;margin-top:14px;width:40%"></div></div>
 </div>
 <!-- 3 pipeline -->
 <div id="s3" class="scene">
@@ -61,11 +82,11 @@ html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#14162B
 <!-- 4 subtitles + voice -->
 <div id="s4" class="scene">
   <div class="tag" style="left:90px;top:70px">04 · SEE IT. HEAR IT.</div>
-  <div class="abs mono" id="langchip" style="left:360px;top:300px;font-size:30px;letter-spacing:3px;color:#E9B53A"></div>
-  <div class="abs" style="left:360px;top:350px;width:1200px;padding:34px 44px;border-radius:28px;background:rgba(20,22,43,.95);border:1px solid rgba(236,230,216,.15);box-shadow:0 30px 70px rgba(0,0,0,.5)">
+  <div class="abs mono" id="langchip" style="left:360px;top:300px;font-size:30px;letter-spacing:3px;color:#00E5FF"></div>
+  <div class="abs" style="left:360px;top:350px;width:1200px;padding:34px 44px;border-radius:28px;background:rgba(6,6,12,.95);border:1px solid rgba(244,246,255,.15);box-shadow:0 30px 70px rgba(0,0,0,.5)">
     <div id="orig4" style="font-size:40px;opacity:.7;min-height:56px"></div>
-    <div id="tr4" class="serif" style="font-size:56px;color:#31A092;margin-top:14px;min-height:76px"></div>
-    <div id="ul4" style="height:6px;background:#E9B53A;margin-top:18px;width:0"></div></div>
+    <div id="tr4" class="serif" style="font-size:56px;color:#3DFFA8;margin-top:14px;min-height:76px"></div>
+    <div id="ul4" style="height:6px;background:#00E5FF;margin-top:18px;width:0"></div></div>
   <svg class="abs" id="voice" style="left:560px;top:690px" width="800" height="150"></svg>
   <div class="abs mono" id="voicelab" style="left:0;width:1920px;top:850px;text-align:center;font-size:26px;letter-spacing:4px;opacity:.75">ENGLISH VOICE</div>
 </div>
@@ -73,26 +94,26 @@ html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#14162B
 <div id="s5" class="scene">
   <div class="tag" style="left:90px;top:70px">05 · NOTES THAT SHOW THEIR SOURCE</div>
   <div id="rows"></div><div id="items"></div>
-  <svg class="abs" style="left:0;top:0" width="1920" height="1080"><path id="th" d="" fill="none" stroke="#E9B53A" stroke-width="5" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="filter:drop-shadow(0 0 6px rgba(233,181,58,.7))"/></svg>
+  <svg class="abs" style="left:0;top:0" width="1920" height="1080"><path id="th" d="" fill="none" stroke="#FF2BD6" stroke-width="5" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="filter:drop-shadow(0 0 6px rgba(255,43,214,.95))"/></svg>
 </div>
 <!-- 6 privacy -->
 <div id="s6" class="scene">
   <div class="tag" style="left:90px;top:70px">06 · NOTHING LEAVES YOUR MAC</div>
-  <div class="abs" id="card6" style="left:260px;top:210px;width:1400px;height:520px;border-radius:26px;background:#1F2447;box-shadow:0 30px 80px rgba(0,0,0,.45);box-sizing:border-box;padding:56px 70px">
-    <div style="display:flex;align-items:center;gap:30px"><svg width="96" height="96" viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V5z" fill="#31A092"/><path d="M8 12l3 3 5-6" fill="none" stroke="#14162B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <div class="abs" id="card6" style="left:260px;top:210px;width:1400px;height:520px;border-radius:26px;background:#0B0B12;box-shadow:0 30px 80px rgba(0,0,0,.45);box-sizing:border-box;padding:56px 70px">
+    <div style="display:flex;align-items:center;gap:30px"><svg width="96" height="96" viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V5z" fill="#3DFFA8"/><path d="M8 12l3 3 5-6" fill="none" stroke="#000000" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     <div class="serif" style="font-size:58px;font-weight:700">Nothing left your Mac in this meeting</div></div>
     <div id="bytes" class="mono" style="font-size:42px;margin-top:56px">Meeting data sent: 0 bytes</div>
     <div id="nos" class="mono" style="font-size:28px;margin-top:44px;opacity:.8"></div></div>
 </div>
 <!-- 7 outro -->
 <div id="s7" class="scene">
-  <div class="abs" id="d1" style="left:300px;top:200px;width:620px;height:300px;border-radius:24px;background:#1F2447;padding:36px;box-sizing:border-box;box-shadow:0 20px 50px rgba(0,0,0,.4)">
+  <div class="abs" id="d1" style="left:300px;top:200px;width:620px;height:300px;border-radius:24px;background:#0B0B12;padding:36px;box-sizing:border-box;box-shadow:0 20px 50px rgba(0,0,0,.4)">
     <div class="serif" style="font-size:42px;font-weight:700">Mac app</div><div style="font-size:26px;opacity:.8;margin-top:12px">Subtitles · voice-over · interpreting · notes</div></div>
-  <div class="abs" id="d2" style="left:1000px;top:200px;width:620px;height:300px;border-radius:24px;background:#1F2447;padding:36px;box-sizing:border-box;box-shadow:0 20px 50px rgba(0,0,0,.4)">
+  <div class="abs" id="d2" style="left:1000px;top:200px;width:620px;height:300px;border-radius:24px;background:#0B0B12;padding:36px;box-sizing:border-box;box-shadow:0 20px 50px rgba(0,0,0,.4)">
     <div class="serif" style="font-size:42px;font-weight:700">Chrome extension</div><div style="font-size:26px;opacity:.8;margin-top:12px">Windows · Linux · ChromeOS · Mac<br>Meet · Teams · Zoom web</div></div>
-  <svg class="abs" id="logo7" style="left:810px;top:540px" width="300" height="300" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12.5" fill="none" stroke="#E9B53A" stroke-width="2.2" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" id="ring7"/><path d="M8 16c3-8 5 8 8 0s5 8 8 0" fill="none" stroke="#ECE6D8" stroke-width="2" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" id="wv7"/></svg>
+  <svg class="abs" id="logo7" style="left:810px;top:540px" width="300" height="300" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12.5" fill="none" stroke="#00E5FF" stroke-width="2.2" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" id="ring7"/><path d="M8 16c3-8 5 8 8 0s5 8 8 0" fill="none" stroke="#F4F6FF" stroke-width="2" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" id="wv7"/></svg>
   <div id="t7" class="abs serif" style="left:0;width:1920px;top:850px;text-align:center;font-size:64px;font-weight:700">Chitter</div>
-  <div id="t7b" class="abs serif" style="left:0;width:1920px;top:940px;text-align:center;font-size:36px;font-style:italic;color:#E9B53A">Catch every word. Keep what matters.</div>
+  <div id="t7b" class="abs serif" style="left:0;width:1920px;top:940px;text-align:center;font-size:36px;color:#00E5FF">Catch every word. Keep what matters.</div>
 </div>
 
 <div id="cap"><span id="capt"></span></div>
@@ -108,17 +129,17 @@ function vis(t){W.forEach(function(w,i){var el=$('s'+i);var a=seg(t,w[0],w[0]+.5
 function loc(i,t){return t-SCN[i].start}
 
 // ---- scene 0: tiles + bubbles
-var P=[['Ana','#E9B53A','A',380,200],['Kenji','#31A092','K',840,200],['Wei','#D9503F','W',1300,200],['Claire','#8E4A7A','C',840,500]];
-P=[['Ana','#E9B53A','A',250,230],['Kenji','#31A092','K',750,230],['Wei','#D9503F','W',1250,230],['Claire','#8F A66A'.replace(' ',''),'C',500,540],['You','#4A5BB8','Y',1000,540]];
+var P=[['Ana','#00E5FF','A',380,200],['Kenji','#3DFFA8','K',840,200],['Wei','#FF3B6B','W',1300,200],['Claire','#FF2BD6','C',840,500]];
+P=[['Ana','#00E5FF','A',250,230],['Kenji','#3DFFA8','K',750,230],['Wei','#FF3B6B','W',1250,230],['Claire','#FFE600','C',500,540],['You','#A66BFF','Y',1000,540]];
 var BUB=['Buenos días a todos','皆さん、おはようございます','大家好，今天开会','Bonjour à tous'];
 var tiles=P.map(function(p,i){var d=document.createElement('div');d.className='tile';d.style.left=p[3]+'px';d.style.top=p[4]+'px';
   d.innerHTML='<div class="av" style="background:'+p[1]+'">'+p[2]+'</div><div class="nm">'+p[0]+'</div>';$('s0').appendChild(d);return d});
 var bubs=BUB.map(function(t,i){var b=document.createElement('div');b.className='bub';b.textContent=t;$('s0').appendChild(b);return b});
 // ---- scene 1: waves
-var wv=$('waves');var wh='';for(var i=0;i<28;i++)wh+='<rect x="'+(i*25)+'" y="80" width="12" rx="6" height="4" fill="#E9B53A"></rect>';wv.innerHTML=wh;
+var wv=$('waves');var wh='';for(var i=0;i<28;i++)wh+='<rect x="'+(i*25)+'" y="80" width="12" rx="6" height="4" fill="#00E5FF"></rect>';wv.innerHTML=wh;
 // ---- scene 2: apps
-var APPS=[['Zoom','#2D8CFF','Z'],['Teams','#6264A7','T'],['Meet','#00897B','M'],['Chrome','#E8710A','C'],['Slack','#4A154B','S']];
-APPS.forEach(function(a,i){var d=document.createElement('div');d.className='abs serif';d.style.cssText='left:'+(190+i*190)+'px;top:300px;width:140px;height:140px;border-radius:32px;background:'+a[1]+';display:grid;place-items:center;font-size:70px;font-weight:700;color:#fff;box-shadow:0 14px 34px rgba(0,0,0,.4)';d.textContent=a[2];d.id='app'+i;$('apps').appendChild(d);
+var APPS=[['Zoom','#00E5FF','Z'],['Teams','#A66BFF','T'],['Meet','#3DFFA8','M'],['Chrome','#FF8A1F','C'],['Slack','#FF2BD6','S']];
+APPS.forEach(function(a,i){var d=document.createElement('div');d.className='abs serif';d.style.cssText='left:'+(190+i*190)+'px;top:300px;width:140px;height:140px;border-radius:32px;background:'+a[1]+';display:grid;place-items:center;font-size:70px;font-weight:700;color:#000;box-shadow:0 14px 34px rgba(0,0,0,.4)';d.textContent=a[2];d.id='app'+i;$('apps').appendChild(d);
   var l=document.createElement('div');l.className='abs';l.style.cssText='left:'+(170+i*190)+'px;top:455px;width:180px;text-align:center;font-size:24px;opacity:.8';l.textContent=a[0];$('apps').appendChild(l)});
 // ---- scene 3: pipeline
 var NODES=[['♪','Hear','your Mac\'s audio'],['文A','Detect','Spanish'],['✎','Transcribe','“Buenos días”'],['⇄','Translate','“Good morning”'],['◉','Speak','in your language']];
@@ -126,11 +147,11 @@ NODES.forEach(function(n,i){var x=170+i*350;
   var d=document.createElement('div');d.className='node';d.id='nd'+i;d.style.left=x+'px';d.style.top=380+'px';d.textContent=n[0];$('pipe').appendChild(d);
   var l=document.createElement('div');l.className='lab';l.style.left=(x-75)+'px';l.style.top='555px';l.textContent=n[1];$('pipe').appendChild(l);
   var s=document.createElement('div');s.className='smp';s.id='sm'+i;s.style.left=(x-75)+'px';s.style.top='610px';s.textContent=n[2];$('pipe').appendChild(s);
-  if(i<4){var c=document.createElement('div');c.className='abs';c.style.cssText='left:'+(x+160)+'px;top:452px;width:180px;height:6px;border-radius:3px;background:rgba(236,230,216,.2)';$('pipe').appendChild(c);
-    var f=document.createElement('div');f.className='abs';f.id='cn'+i;f.style.cssText='left:'+(x+160)+'px;top:452px;width:0;height:6px;border-radius:3px;background:#E9B53A';$('pipe').appendChild(f)}});
-var tok=document.createElement('div');tok.className='abs';tok.style.cssText='width:34px;height:34px;border-radius:50%;background:#E9B53A;box-shadow:0 0 24px #E9B53A;top:438px';$('pipe').appendChild(tok);
+  if(i<4){var c=document.createElement('div');c.className='abs';c.style.cssText='left:'+(x+160)+'px;top:452px;width:180px;height:6px;border-radius:3px;background:rgba(244,246,255,.2)';$('pipe').appendChild(c);
+    var f=document.createElement('div');f.className='abs';f.id='cn'+i;f.style.cssText='left:'+(x+160)+'px;top:452px;width:0;height:6px;border-radius:3px;background:#00E5FF';$('pipe').appendChild(f)}});
+var tok=document.createElement('div');tok.className='abs';tok.style.cssText='width:34px;height:34px;border-radius:50%;background:#00E5FF;box-shadow:0 0 24px #00E5FF;top:438px';$('pipe').appendChild(tok);
 // ---- scene 4: voice bars
-var vh='';for(var i=0;i<40;i++)vh+='<rect x="'+(i*20)+'" y="70" width="10" rx="5" height="6" fill="#31A092"></rect>';$('voice').innerHTML=vh;
+var vh='';for(var i=0;i<40;i++)vh+='<rect x="'+(i*20)+'" y="70" width="10" rx="5" height="6" fill="#3DFFA8"></rect>';$('voice').innerHTML=vh;
 // ---- scene 5: notes
 var L=[["Let's start with the launch date.",60],["I think we should move the release to the 1st of March because testing is not finished.",100],["Agreed.",60],["I will ask the design team to finish the onboarding screens by next Wednesday.",100],["Also, Priya needs to update the privacy policy before launch.",100]];
 var rowY=[],yy=190;L.forEach(function(r){rowY.push(yy);yy+=r[1]+12});
@@ -147,22 +168,22 @@ function render(t){
  var cap=$('capt');if(ci>=0){cap.textContent=SCN[ci].text;op($('cap'),ease(seg(t,SCN[ci].start-0.1,SCN[ci].start+.25))*(1-seg(t,SCN[ci].start+SCN[ci].speech,SCN[ci].start+SCN[ci].speech+.4)))}else op($('cap'),0);
  // 0
  var l0=loc(0,t);var cur=Math.floor(Math.max(0,l0)/1.1)%4;
- tiles.forEach(function(d,i){var a=ease(seg(l0,-.3+i*.12,.3+i*.12));op(d,a);tr(d,0,(1-a)*30);var sp=(i==cur&&i<4&&l0>0);d.style.boxShadow=sp?'0 0 0 6px #E9B53A,0 20px 50px rgba(0,0,0,.4)':'0 20px 50px rgba(0,0,0,.4)'});
+ tiles.forEach(function(d,i){var a=ease(seg(l0,-.3+i*.12,.3+i*.12));op(d,a);tr(d,0,(1-a)*30);var sp=(i==cur&&i<4&&l0>0);d.style.boxShadow=sp?'0 0 0 6px #00E5FF,0 20px 50px rgba(0,0,0,.4)':'0 20px 50px rgba(0,0,0,.4)'});
  bubs.forEach(function(b,i){var ph=l0-i*1.1;var on=ph>0&&ph<1.1;var a=on?ease(seg(ph,0,.25))*(1-seg(ph,.85,1.1)):0;op(b,a);b.style.left=(P[i][3]+30)+'px';b.style.top=(P[i][4]-30)+'px';tr(b,0,(1-a)*20,.8+.2*a)});
  // 1
  var l1=loc(1,t);op($('mac'),ease(seg(l1,-.4,.2)));
  var rs=wv.querySelectorAll('rect');rs.forEach(function(r,i){var h=8+Math.abs(Math.sin(l1*5-i*.45))*110*ease(seg(l1,0,1));r.setAttribute('height',h);r.setAttribute('y',80-h/2)});
- $('mbicon').style.filter='drop-shadow(0 0 '+(6+6*Math.sin(l1*6))+'px #E9B53A)';
+ $('mbicon').style.filter='drop-shadow(0 0 '+(6+6*Math.sin(l1*6))+'px #00E5FF)';
  var nb=ease(seg(l1,3.6,4.4));op($('nobot'),nb);tr($('nobot'),0,(1-nb)*20);
  // 2
  var l2=loc(2,t);APPS.forEach(function(a,i){var e=ease(seg(l2,-.2+i*.1,.3+i*.1));op($('app'+i),e);tr($('app'+i),0,(1-e)*30,.85+.15*e);
-   var hot=(i==0&&l2>1.5);$('app'+i).style.outline=hot?'6px solid #E9B53A':'none'});
+   var hot=(i==0&&l2>1.5);$('app'+i).style.outline=hot?'6px solid #00E5FF':'none'});
  var tt=ease(seg(l2,1.6,2.2));op($('toast'),tt);tr($('toast'),(1-tt)*120,0);
  var rb=ease(seg(l2,3,3.7));op($('rib2'),rb);tr($('rib2'),0,(1-rb)*60);
  // 3: token moves through the five stages across the speech
  var l3=loc(3,t);var prog=cl((l3-0.4)/(SCN[3].speech-1.2))*4;
  NODES.forEach(function(n,i){var lit=prog>=i-0.01;var nd=$('nd'+i);var e=ease(seg(l3,-.2+i*.1,.3+i*.1));op(nd,e);
-   nd.style.borderColor=lit?'#E9B53A':'rgba(236,230,216,.28)';nd.style.background=lit?'rgba(233,181,58,.22)':'#1F2447';nd.style.transform='scale('+(lit&&Math.abs(prog-i)<.35?1.12:1)+')';
+   nd.style.borderColor=lit?'#00E5FF':'rgba(244,246,255,.28)';nd.style.background=lit?'rgba(255,43,214,.22)':'#0B0B12';nd.style.transform='scale('+(lit&&Math.abs(prog-i)<.35?1.12:1)+')';
    op($('sm'+i),lit?1:.25);if(i<4)$('cn'+i).style.width=(180*cl(prog-i))+'px'});
  tok.style.left=(170+prog*350+58)+'px';op(tok,seg(l3,.1,.4)*(1-seg(prog,3.95,4.05)));
  // 4
@@ -178,8 +199,8 @@ function render(t){
  // 5
  var l5=loc(5,t);
  var act=-1;TH.forEach(function(x,j){var at=SCN[5].speech*x[0];if(l5>=at&&l5<at+SCN[5].speech*0.2)act=j});
- L.forEach(function(r,i){var a=ease(seg(l5,.0+i*.12,.5+i*.12));var d=$('r'+i);op(d,a);tr(d,(1-a)*-30,0);var on=act>=0&&TH[act][2]==i;d.style.background=on?'rgba(233,181,58,.28)':'transparent';d.style.borderLeftColor=on?'#E9B53A':'#2E9C8E'});
- I.forEach(function(it,k){var a=ease(seg(l5,.6+k*.15,1.1+k*.15));var d=$('i'+k);op(d,a);tr(d,(1-a)*30,0);if(it[0]!='h'){var on=act>=0&&TH[act][1]==k;d.style.background=on?'rgba(233,181,58,.22)':'transparent'}});
+ L.forEach(function(r,i){var a=ease(seg(l5,.0+i*.12,.5+i*.12));var d=$('r'+i);op(d,a);tr(d,(1-a)*-30,0);var on=act>=0&&TH[act][2]==i;d.style.background=on?'rgba(255,43,214,.24)':'#0B0B12';d.style.borderColor=on?'#FF2BD6':'rgba(0,229,255,.28)'});
+ I.forEach(function(it,k){var a=ease(seg(l5,.6+k*.15,1.1+k*.15));var d=$('i'+k);op(d,a);tr(d,(1-a)*30,0);if(it[0]!='h'){var on=act>=0&&TH[act][1]==k;d.style.background=on?'rgba(255,43,214,.22)':'transparent'}});
  var th=$('th');if(act>=0){var x=TH[act],at=SCN[5].speech*x[0],p=ease(seg(l5,at,at+.5)),fade=1-seg(l5,at+SCN[5].speech*0.2-.5,at+SCN[5].speech*0.2);
   var it=I[x[1]],ix=1000,iy=it[2]+34,rx=910,ry=rowY[x[2]]+L[x[2]][1]/2;th.setAttribute('d','M'+ix+' '+iy+' C'+(ix-130)+' '+iy+','+(rx+130)+' '+ry+','+rx+' '+ry);th.style.strokeDashoffset=1-p;th.style.opacity=fade}else th.style.opacity=0;
  // 6

@@ -108,3 +108,6 @@ Symptom (user's Meet call, unmuted, speaking Spanish): no pill, no subtitles. Ca
 - **Comet 157 probe** (headless, empty profile): on-device speech and translation report `downloadable`, language detection `available`, on-device notes model `unavailable`.
 - Tests: 58 Swift tests pass.
 - **Not verified:** a real call with another person; auto-start during a real call; hands-free and hold-to-talk with a real microphone; playback into BlackHole heard by a caller; Personal Voice (none exists here); the extension loaded in a browser, including tab capture and model download.
+
+## 2026-11-27: "Neon Night" redesign
+Black theme with neon accents and rounded shapes in the Mac app, extension overlay and popup, website, README graphics, icons and both videos. Every app screen was rendered to images from demo data (`--snapshot-ui <folder>`) and checked. Website checked in a browser, with no horizontal overflow at 375 px. 58 Swift tests (including the new contrast checks) and 16 extension checks pass. The explainer reuses its saved narration audio. Not checked: the app's windows as used by hand (switch colour and hover states only show in a focused window).

@@ -4,11 +4,11 @@
 
 <br>
 
-![macOS](https://img.shields.io/badge/macOS-14.4%2B-14162B?style=for-the-badge&logo=apple&logoColor=white)
-![Swift](https://img.shields.io/badge/Swift-6-F05138?style=for-the-badge&logo=swift&logoColor=white)
-![Chrome](https://img.shields.io/badge/Chrome_extension-139%2B-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)
-![On-device AI](https://img.shields.io/badge/AI-on--device-6A4FD6?style=for-the-badge)
-![Privacy](https://img.shields.io/badge/privacy-local--first-2E9C8E?style=for-the-badge)
+![macOS](https://img.shields.io/badge/macOS-14.4%2B-000000?style=for-the-badge&logo=apple&logoColor=00E5FF)
+![Swift](https://img.shields.io/badge/Swift-6-FF8A1F?style=for-the-badge&logo=swift&logoColor=black)
+![Chrome](https://img.shields.io/badge/Chrome_extension-139%2B-00E5FF?style=for-the-badge&logo=googlechrome&logoColor=black)
+![On-device AI](https://img.shields.io/badge/AI-on--device-A66BFF?style=for-the-badge)
+![Privacy](https://img.shields.io/badge/privacy-local--first-3DFFA8?style=for-the-badge)
 
 **A real-time speech-translation and meeting-notes system, built as a software engineering project:  live subtitles, an English voice-over of foreign speech,<br>your own voice interpreted into the meeting, and notes that show where every decision came from.**
 

@@ -1,0 +1,54 @@
+{
+ "duration": 72.855,
+ "voice": "saved narration",
+ "scenes": [
+  {
+   "start": 1.0,
+   "speech": 5.015,
+   "end": 6.915,
+   "text": "You join a call, and someone starts speaking a language you don't understand."
+  },
+  {
+   "start": 6.915,
+   "speech": 8.147,
+   "end": 15.963,
+   "text": "Chitter fixes that. It's a free app that listens to the sound your Mac is already playing, so no bot ever joins your meeting."
+  },
+  {
+   "start": 15.963,
+   "speech": 6.755,
+   "end": 23.618,
+   "text": "It notices when a call begins, in Zoom, Teams, or a browser tab, and wakes up on its own."
+  },
+  {
+   "start": 23.618,
+   "speech": 9.564,
+   "end": 34.082,
+   "text": "Then, for every sentence, it detects the language, writes down what was said, translates it, and speaks it to you in your own language."
+  },
+  {
+   "start": 34.082,
+   "speech": 8.998,
+   "end": 43.98,
+   "text": "You see live subtitles with the translation underneath, and hear a natural voice in English, even if the speaker switches language halfway through."
+  },
+  {
+   "start": 43.98,
+   "speech": 9.74,
+   "end": 54.62,
+   "text": "When the call ends, Chitter turns the transcript into notes. Every decision links to the exact line it came from, so you can always check the source."
+  },
+  {
+   "start": 54.62,
+   "speech": 6.873,
+   "end": 62.393,
+   "text": "Your privacy stays yours. Everything runs on your device, and a ledger shows that nothing left your Mac."
+  },
+  {
+   "start": 62.393,
+   "speech": 9.262,
+   "end": 72.855,
+   "text": "It's free and open source, with a Mac app, and a Chrome extension for Windows and Linux. Chitter. Catch every word. Keep what matters."
+  }
+ ]
+}

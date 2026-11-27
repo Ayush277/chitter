@@ -13,13 +13,13 @@ struct LiveTranscriptView: View {
     @ObservedObject var model: LiveTranscriptModel
     var body: some View {
         VStack(spacing: 0) {
-            Picker("Show", selection: $model.mode) { ForEach(SubtitleMode.allCases, id: \.self) { Text($0.label).tag($0) } }
-                .pickerStyle(.segmented).labelsHidden().padding(10)
-                .accessibilityLabel("Live transcript shows both languages, the translation, or the original")
+            NeonSegmented("Live transcript shows both languages, the translation, or the original",
+                          options: SubtitleMode.allCases.map { ($0, $0.label) }, selection: $model.mode)
+                .padding(10)
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 12) {
-                        if model.lines.isEmpty { Text("Lines appear here while Chitter is listening.").font(.callout).foregroundStyle(.secondary) }
+                        if model.lines.isEmpty { Text("Lines appear here while Chitter is listening.").font(.callout).foregroundStyle(Tokens.textDim.color) }
                         ForEach(model.lines) { s in row(s).id(s.id) }
                     }.frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 12).padding(.bottom, 12)
                 }
@@ -27,6 +27,7 @@ struct LiveTranscriptView: View {
             }
         }
         .frame(minWidth: 260, minHeight: 300)
+        .neonRoot()
     }
 
     func row(_ s: Segment) -> some View {
@@ -36,9 +37,12 @@ struct LiveTranscriptView: View {
                 Text(String(format: "%02d:%02d", Int(s.start) / 60, Int(s.start) % 60)).font(.system(.caption2, design: .monospaced)).foregroundStyle(.secondary)
                 if s.interpreted == true { InterpretedTag() } else if s.speaker == 1 { Text("You").font(.caption2.weight(.semibold)) }
             }
-            if let o = shown.original { Text(o).font(.callout).foregroundStyle(shown.translation == nil ? .primary : .secondary) }
-            if let t = shown.translation { Text(t).font(.system(.body, design: .serif)) }
+            if let o = shown.original { Text(o).font(.callout).foregroundStyle(shown.translation == nil ? Tokens.text.color : Tokens.textDim.color) }
+            if let t = shown.translation { Text(t).font(.system(.body, design: .rounded).weight(.medium)).foregroundStyle(Tokens.mint.color) }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(10)
+        .neonCard(Tokens.thread(s.speaker).color, radius: Tokens.Radius.small)
         .textSelection(.enabled)
         .accessibilityElement(children: .combine)
     }
@@ -65,6 +69,7 @@ public final class LiveTranscriptPanel {
             p.sharingType = .none
             p.contentView = NSHostingView(rootView: LiveTranscriptView(model: model))
             if let f = NSScreen.main?.visibleFrame { p.setFrameOrigin(NSPoint(x: f.maxX - 356, y: f.midY - 280)) }
+            NeonWindow.apply(to: p)
             panel = p
         }
         panel?.orderFrontRegardless()

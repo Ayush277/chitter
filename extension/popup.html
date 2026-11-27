@@ -1,13 +1,22 @@
 <!doctype html><html lang="en"><meta charset="utf-8"><title>Chitter</title>
 <style>
-body{margin:0;width:340px;font:14px/1.45 -apple-system,"Segoe UI",Roboto,sans-serif;background:#F3EDE2;color:#1C1B26}
-@media(prefers-color-scheme:dark){body{background:#14162B;color:#ECE6D8}select,button{background:#1F2447;color:#ECE6D8}}
-main{padding:14px 16px}h1{font:700 22px Georgia,serif;margin:0 0 2px}p.s{margin:0 0 12px;opacity:.75;font-size:12px}
-label{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:9px 0}
-select,button{font:inherit;padding:5px 8px;border-radius:8px;border:1px solid rgba(128,128,128,.4);background:#E6DDCC;color:inherit}
-button.p{background:#E9B53A;color:#14162B;border-color:#E9B53A;font-weight:600;cursor:pointer;width:100%;margin-top:8px}
-hr{border:0;border-top:1px dashed rgba(128,128,128,.5);margin:12px 0}.warn{font-size:12px;opacity:.8}#msg{font-size:12px;margin-top:6px;min-height:16px}
-:focus-visible{outline:3px solid #E9B53A;outline-offset:2px}
+:root{color-scheme:dark}
+body{margin:0;width:340px;font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#000;color:#F4F6FF}
+main{margin:8px;padding:14px 16px;border:1.5px solid rgba(0,229,255,.45);border-radius:24px;background:#0B0B12;box-shadow:inset 0 0 26px rgba(0,229,255,.1)}
+h1{font:800 24px ui-rounded,system-ui,sans-serif;margin:0 0 2px;background:linear-gradient(95deg,#00E5FF,#FF2BD6);-webkit-background-clip:text;background-clip:text;color:transparent}
+p.s{margin:0 0 12px;color:#A9AFCB;font-size:12px}
+label{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:10px 0}
+select,button{font:inherit;color:#F4F6FF;background:#15151F;border:1px solid rgba(0,229,255,.45);border-radius:999px;padding:6px 12px}
+input[type=checkbox]{appearance:none;flex:none;width:38px;height:22px;margin:0;border-radius:999px;background:#262636;position:relative;cursor:pointer;transition:background .15s}
+input[type=checkbox]::before{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#A9AFCB;transition:transform .15s}
+input[type=checkbox]:checked{background:#00E5FF;box-shadow:0 0 12px rgba(0,229,255,.65)}
+input[type=checkbox]:checked::before{transform:translateX(16px);background:#000}
+button.p{width:100%;margin-top:8px;cursor:pointer;font-weight:700;background:rgba(0,229,255,.1);box-shadow:0 0 12px rgba(0,229,255,.25)}
+#tabaudio{background:linear-gradient(95deg,#00E5FF,#FF2BD6) border-box;border-color:transparent;color:#000;box-shadow:0 0 18px rgba(0,229,255,.45)}
+hr{border:0;height:2px;border-radius:999px;background:linear-gradient(90deg,transparent,#00E5FF,#FF2BD6,transparent);margin:14px 0}
+.warn{font-size:12px;color:#A9AFCB}#msg{font-size:12px;margin-top:6px;min-height:16px;color:#3DFFA8}
+:focus-visible{outline:3px solid #00E5FF;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 <main>
 <h1>Chitter</h1><p class="s">Catch every word. Keep what matters. Runs on your device.</p>

@@ -1,7 +1,7 @@
 import SwiftUI
 import AppKit
 
-/// Single source of truth for Chitter's "Dyer's Palette" (spec §4.3).
+/// Single source of truth for Chitter's "Neon Night" theme.
 public enum Tokens {
     public struct Hex { public let r, g, b: Double
         public init(_ v: UInt32) { r = Double((v >> 16) & 255) / 255; g = Double((v >> 8) & 255) / 255; b = Double(v & 255) / 255 }
@@ -17,18 +17,23 @@ public enum Tokens {
             return (a + 0.05) / (b + 0.05)
         }
     }
-    public static let ink = Hex(0x14162B), woad = Hex(0x1F2447)
-    public static let linen = Hex(0xF3EDE2), bone = Hex(0xE6DDCC)
-    public static let textDark = Hex(0x1C1B26), textLight = Hex(0xECE6D8)
-    public static let madder = Hex(0xD9503F), weld = Hex(0xE9B53A), verdigris = Hex(0x31A092)   // nudged from #2E9C8E so it passes AA on woad (4.47 → ≥4.5)
-    /// Verdigris darkened for text on light surfaces (linen/bone) — the base tone is only 2.9:1 there.
-    public static let verdigrisDeep = Hex(0x1B6B60)
-    public static func translationText(dark: Bool) -> Hex { dark ? verdigris : verdigrisDeep }
-    public static let lichen = Hex(0x8FA66A), mulberry = Hex(0x8E4A7A), indigoDye = Hex(0x4A5BB8)
+    // "Neon Night": true black surfaces with neon accents. Dark only.
+    public static let black = Hex(0x000000), surface = Hex(0x0B0B12), raised = Hex(0x15151F)
+    public static let text = Hex(0xF4F6FF), textDim = Hex(0xA9AFCB)
+    /// Primary actions and focus.
+    public static let cyan = Hex(0x00E5FF)
+    /// Highlights, including the pulled thread from a note to its source line.
+    public static let magenta = Hex(0xFF2BD6)
+    /// Translated text and "healthy".
+    public static let mint = Hex(0x3DFFA8)
+    public static let yellow = Hex(0xFFE600), red = Hex(0xFF3B6B), violet = Hex(0xA66BFF), orange = Hex(0xFF8A1F)
 
-    /// Speaker thread order (spec §4.3). Never rely on colour alone: pair with `speakerInitial`.
-    public static let speakerThreads: [Hex] = [weld, verdigris, madder, lichen, mulberry, indigoDye]
+    /// Speaker thread order. Never rely on colour alone: pair with `speakerInitial`.
+    public static let speakerThreads: [Hex] = [cyan, magenta, mint, yellow, violet, orange]
     public static func thread(_ speaker: Int) -> Hex { speakerThreads[((speaker % 6) + 6) % 6] }
+
+    /// Corner radii. Everything Chitter draws is rounded; controls are fully rounded capsules.
+    public enum Radius { public static let small: CGFloat = 12, card: CGFloat = 18, panel: CGFloat = 24 }
     public static func speakerInitial(_ speaker: Int) -> String { String(UnicodeScalar(UInt8(65 + ((speaker % 26) + 26) % 26))) }
 }
 

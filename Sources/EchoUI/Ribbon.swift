@@ -43,37 +43,44 @@ struct RibbonView: View {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(Tokens.speakerInitial(model.speaker))
                     .font(.system(size: big ? 18 : 11, weight: .bold, design: .rounded))
-                    .foregroundStyle(Tokens.ink.color)
+                    .foregroundStyle(Tokens.black.color)
                     .frame(width: big ? 28 : 18, height: big ? 28 : 18)
-                    .background(Circle().fill(thread.color))
+                    .background(Circle().fill(thread.color).shadow(color: thread.color.opacity(0.9), radius: 6))
                     .accessibilityHidden(true)
                 if let original = shown.original {
                     Text(original)
                         .font(.system(size: big ? 28 : 15))
-                        .foregroundStyle(Tokens.textLight.color.opacity(0.7))
+                        .foregroundStyle(Tokens.textDim.color)
                         .lineLimit(2)
                 }
             }
             if let translation = shown.translation {
                 Text(translation)
-                    .font(.system(size: big ? 34 : 20, weight: .medium, design: .serif))
-                    .foregroundStyle(Tokens.textLight.color)
+                    .font(.system(size: big ? 34 : 20, weight: .medium, design: .rounded))
+                    .foregroundStyle(shown.original == nil ? Tokens.text.color : Tokens.mint.color)
                     .lineLimit(3)
             }
             GeometryReader { g in
-                Rectangle().fill(thread.color)
-                    .frame(width: g.size.width * (model.isFinal ? 1 : 0.4), height: 2)
+                Capsule(style: .circular).fill(LinearGradient(colors: [thread.color, Tokens.magenta.color], startPoint: .leading, endPoint: .trailing))
+                    .frame(width: g.size.width * (model.isFinal ? 1 : 0.4), height: 3)
+                    .shadow(color: thread.color.opacity(0.9), radius: 4)
                     .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: model.isFinal)
-            }.frame(height: 2)
+            }.frame(height: 3)
         }
         .padding(.horizontal, 18).padding(.vertical, 12)
-        .background(RoundedRectangle(cornerRadius: 14).fill(Tokens.ink.color.opacity(0.88)))
+        .neonCard(thread.color, radius: Tokens.Radius.panel, fill: Tokens.black.color.opacity(0.9))
         .frame(maxWidth: big ? 1100 : 820)
+        .padding(10)      // room for the glow
         .opacity(model.visible ? (model.hovering ? 0.15 : 1) : 0)
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: model.visible)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Live subtitle: \(shown.original ?? ""). \(shown.translation ?? "")")
     }
+}
+
+extension RibbonModel {
+    /// QA: the ribbon on its own, for rendering to an image.
+    public func previewView() -> some View { RibbonView(model: self) }
 }
 
 /// Floating, non-activating panel. Click-through by default; goes transparent while the pointer is over it;
@@ -87,7 +94,7 @@ public final class RibbonPanel {
 
     public init(model: RibbonModel) {
         self.model = model
-        panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 900, height: 160),
+        panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 900, height: 190),
                         styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.level = .statusBar
         panel.isOpaque = false; panel.backgroundColor = .clear; panel.hasShadow = false

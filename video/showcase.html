@@ -1,65 +1,86 @@
 <!doctype html>
 <html><head><meta charset="utf-8">
 <style>
-html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#14162B}
-#root{position:relative;width:1920px;height:1080px;overflow:hidden;background:#14162B;color:#ECE6D8;font-family:"Helvetica Neue",Arial,sans-serif}
+html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#000000}
+#root{position:relative;width:1920px;height:1080px;overflow:hidden;background:#000000;color:#F4F6FF;font-family:"Helvetica Neue",Arial,sans-serif}
 .abs{position:absolute}
-.serif{font-family:Georgia,"Times New Roman",serif}
+.serif{font-family:ui-rounded,"SF Pro Rounded",system-ui,sans-serif}
 .mono{font-family:Menlo,Courier,monospace}
-.warp{position:absolute;inset:0;background-image:repeating-linear-gradient(90deg,transparent 0 95px,rgba(236,230,216,.045) 95px 96px)}
-.row{position:absolute;left:90px;width:800px;padding:10px 16px 10px 20px;font-size:28px;line-height:1.3;border-left:5px solid #2E9C8E;border-radius:4px;box-sizing:border-box}
+.warp{position:absolute;inset:0;background-image:repeating-linear-gradient(90deg,transparent 0 95px,rgba(244,246,255,.045) 95px 96px)}
+.row{position:absolute;left:90px;width:800px;padding:10px 16px 10px 20px;font-size:28px;line-height:1.3;border-left:5px solid #00E5FF;border-radius:4px;box-sizing:border-box}
 .row b{font:600 17px Menlo,monospace;opacity:.6;margin-right:10px}
-.item{position:absolute;left:1010px;width:820px;padding:12px 18px;font-size:27px;line-height:1.3;border-radius:10px;border:1.5px solid rgba(236,230,216,.22);box-sizing:border-box}
+.item{position:absolute;left:1010px;width:820px;padding:12px 18px;font-size:27px;line-height:1.3;border-radius:10px;border:1.5px solid rgba(244,246,255,.22);box-sizing:border-box}
 .item small{font:15px Menlo,monospace;opacity:.6;margin-left:8px}
-.h{position:absolute;font:700 34px Georgia,serif;color:#E9B53A}
+.h{position:absolute;font:700 34px ui-rounded,system-ui,sans-serif;color:#00E5FF}
+
+/* neon night: black stage, neon edges, rounded everything */
+#root{background:radial-gradient(900px 620px at 6% 0,rgba(0,229,255,.17),transparent 70%),radial-gradient(900px 620px at 98% 30%,rgba(255,43,214,.15),transparent 70%),radial-gradient(1000px 600px at 45% 105%,rgba(166,107,255,.16),transparent 70%),#000!important}
+.tile{border:2px solid rgba(0,229,255,.45);border-radius:38px!important}
+.row{border:2px solid rgba(0,229,255,.28);border-radius:24px!important;background:#0B0B12}
+.item{border:2px solid rgba(166,107,255,.55)!important;border-radius:24px!important}
+.node{box-shadow:0 0 22px rgba(0,229,255,.2)}
+#rib,#rib2{border:2px solid rgba(0,229,255,.7)!important;border-radius:44px!important;box-shadow:0 0 60px rgba(0,229,255,.35)!important}
+#s4 .abs[style*="width:1200px"]{border:2px solid rgba(0,229,255,.7)!important;border-radius:44px!important;box-shadow:0 0 60px rgba(0,229,255,.35)!important}
+#s2 .abs[style*="width:1500px;height:560px"]{border:2px solid rgba(166,107,255,.6);border-radius:48px!important;box-shadow:0 0 70px rgba(166,107,255,.28)!important}
+#mac{border:2px solid rgba(166,107,255,.7)!important;border-radius:40px!important;box-shadow:0 0 70px rgba(166,107,255,.28)}
+#s4card,#card6{border:2px solid rgba(61,255,168,.65);border-radius:48px!important;box-shadow:0 0 70px rgba(61,255,168,.25)!important}
+#rc{border:2px solid rgba(61,255,168,.65);border-radius:40px;box-shadow:0 0 60px rgba(61,255,168,.22)!important}
+#toast{border:2px solid #FF2BD6!important;border-radius:36px!important;box-shadow:0 0 50px rgba(255,43,214,.35)!important}
+#d1{border:2px solid rgba(0,229,255,.65);border-radius:40px!important;box-shadow:0 0 50px rgba(0,229,255,.25)!important}
+#d2{border:2px solid rgba(255,43,214,.65);border-radius:40px!important;box-shadow:0 0 50px rgba(255,43,214,.25)!important}
+.bub{box-shadow:0 0 30px rgba(0,229,255,.5)!important;border-radius:999px!important}
+#cap span{border:1.5px solid rgba(166,107,255,.55);border-radius:999px!important}
+#ul,#ul4{background:linear-gradient(90deg,#00E5FF,#FF2BD6)!important;border-radius:999px;box-shadow:0 0 16px #00E5FF}
+#t1,#e1,#t7{background:linear-gradient(95deg,#00E5FF,#FF2BD6);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800}
+#logo,#logo7{filter:drop-shadow(0 0 18px rgba(0,229,255,.8))}
 </style></head>
 <body>
 <div id="root">
   <div class="warp"></div>
   <div id="s1" class="abs" style="inset:0">
-    <svg class="abs" id="logo" style="left:810px;top:230px" width="300" height="300" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12.5" fill="none" stroke="#E9B53A" stroke-width="2.2" id="ring" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/><path d="M8 16c3-8 5 8 8 0s5 8 8 0" fill="none" stroke="#ECE6D8" stroke-width="2" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" id="wv"/></svg>
+    <svg class="abs" id="logo" style="left:810px;top:230px" width="300" height="300" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12.5" fill="none" stroke="#00E5FF" stroke-width="2.2" id="ring" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/><path d="M8 16c3-8 5 8 8 0s5 8 8 0" fill="none" stroke="#F4F6FF" stroke-width="2" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" id="wv"/></svg>
     <div id="t1" class="abs serif" style="left:0;width:1920px;top:560px;text-align:center;font-size:120px;font-weight:700;letter-spacing:-2px">Chitter</div>
-    <div id="t2" class="abs serif" style="left:0;width:1920px;top:720px;text-align:center;font-size:48px;color:#E9B53A;font-style:italic">Catch every word. Keep what matters.</div>
+    <div id="t2" class="abs serif" style="left:0;width:1920px;top:720px;text-align:center;font-size:48px;color:#00E5FF;font-style:italic">Catch every word. Keep what matters.</div>
     <div id="t3" class="abs mono" style="left:0;width:1920px;top:820px;text-align:center;font-size:24px;letter-spacing:4px;opacity:.7">FREE · OPEN SOURCE · NO BOT · MAC</div>
   </div>
   <div id="s2" class="abs" style="inset:0">
-    <div id="s2h" class="abs mono" style="left:90px;top:80px;font-size:26px;letter-spacing:4px;color:#31A092">01 · LIVE SUBTITLES</div>
+    <div id="s2h" class="abs mono" style="left:90px;top:80px;font-size:26px;letter-spacing:4px;color:#3DFFA8">01 · LIVE SUBTITLES</div>
     <div id="s2t" class="abs serif" style="left:90px;top:130px;font-size:64px;font-weight:700;width:1500px">For anything your Mac plays</div>
-    <div class="abs" style="left:210px;top:330px;width:1500px;height:560px;border-radius:26px;background:linear-gradient(135deg,#2a2f55,#1b1e3a);box-shadow:0 30px 80px rgba(0,0,0,.45)"></div>
-    <div class="abs" style="left:250px;top:365px;width:520px;height:20px;border-radius:10px;background:rgba(236,230,216,.12)"></div>
-    <div class="abs" style="left:250px;top:405px;width:360px;height:20px;border-radius:10px;background:rgba(236,230,216,.08)"></div>
-    <div id="rib" class="abs" style="left:300px;top:640px;width:1320px;padding:26px 36px;border-radius:26px;background:rgba(20,22,43,.94);box-sizing:border-box">
-      <div style="display:flex;align-items:center;gap:20px"><div style="width:44px;height:44px;border-radius:22px;background:#E9B53A;color:#14162B;font:700 24px Helvetica,sans-serif;text-align:center;line-height:44px">A</div>
+    <div class="abs" style="left:210px;top:330px;width:1500px;height:560px;border-radius:26px;background:linear-gradient(135deg,#150A2A,#07070C);box-shadow:0 30px 80px rgba(0,0,0,.45)"></div>
+    <div class="abs" style="left:250px;top:365px;width:520px;height:20px;border-radius:10px;background:rgba(244,246,255,.12)"></div>
+    <div class="abs" style="left:250px;top:405px;width:360px;height:20px;border-radius:10px;background:rgba(244,246,255,.08)"></div>
+    <div id="rib" class="abs" style="left:300px;top:640px;width:1320px;padding:26px 36px;border-radius:26px;background:rgba(6,6,12,.94);box-sizing:border-box">
+      <div style="display:flex;align-items:center;gap:20px"><div style="width:44px;height:44px;border-radius:22px;background:#00E5FF;color:#000000;font:700 24px Helvetica,sans-serif;text-align:center;line-height:44px">A</div>
       <div id="orig" style="font-size:36px;opacity:.72;min-height:90px;line-height:1.25"></div></div>
-      <div id="tr" class="serif" style="font-size:44px;color:#31A092;margin-top:12px;min-height:110px;line-height:1.2"></div>
-      <div id="ul" style="height:5px;background:#E9B53A;margin-top:16px;width:0"></div>
+      <div id="tr" class="serif" style="font-size:44px;color:#3DFFA8;margin-top:12px;min-height:110px;line-height:1.2"></div>
+      <div id="ul" style="height:5px;background:#00E5FF;margin-top:16px;width:0"></div>
     </div>
     <div id="s2n" class="abs mono" style="left:210px;top:930px;font-size:20px;opacity:.55">Lines from a real run on this Mac · translation shown with a language pack installed</div>
   </div>
   <div id="s3" class="abs" style="inset:0">
-    <div id="s3h" class="abs mono" style="left:90px;top:56px;font-size:26px;letter-spacing:4px;color:#31A092">02 · PULL THE THREAD</div>
+    <div id="s3h" class="abs mono" style="left:90px;top:56px;font-size:26px;letter-spacing:4px;color:#3DFFA8">02 · PULL THE THREAD</div>
     <div id="s3t" class="abs serif" style="left:90px;top:96px;font-size:54px;font-weight:700;width:1700px">Every conclusion points to its source</div>
     <div id="rows"></div>
     <div id="items"></div>
-    <svg class="abs" style="left:0;top:0" width="1920" height="1080"><path id="th" d="" fill="none" stroke="#E9B53A" stroke-width="5" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="filter:drop-shadow(0 0 6px rgba(233,181,58,.7))"/></svg>
+    <svg class="abs" style="left:0;top:0" width="1920" height="1080"><path id="th" d="" fill="none" stroke="#FF2BD6" stroke-width="5" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1" style="filter:drop-shadow(0 0 6px rgba(255,43,214,.95))"/></svg>
     <div id="s3n" class="abs mono" style="left:90px;top:1030px;font-size:19px;opacity:.5">Sample meeting · notes written on-device by Apple's model, zero API keys</div>
   </div>
   <div id="s4" class="abs" style="inset:0">
-    <div id="s4h" class="abs mono" style="left:90px;top:80px;font-size:26px;letter-spacing:4px;color:#31A092">03 · PRIVACY LEDGER</div>
-    <div id="s4card" class="abs" style="left:260px;top:240px;width:1400px;height:520px;border-radius:26px;background:#1F2447;box-shadow:0 30px 80px rgba(0,0,0,.45);box-sizing:border-box;padding:56px 70px">
-      <div style="display:flex;align-items:center;gap:30px"><svg width="90" height="90" viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V5z" fill="#31A092"/><path d="M8 12l3 3 5-6" fill="none" stroke="#14162B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div id="s4h" class="abs mono" style="left:90px;top:80px;font-size:26px;letter-spacing:4px;color:#3DFFA8">03 · PRIVACY LEDGER</div>
+    <div id="s4card" class="abs" style="left:260px;top:240px;width:1400px;height:520px;border-radius:26px;background:#0B0B12;box-shadow:0 30px 80px rgba(0,0,0,.45);box-sizing:border-box;padding:56px 70px">
+      <div style="display:flex;align-items:center;gap:30px"><svg width="90" height="90" viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V5z" fill="#3DFFA8"/><path d="M8 12l3 3 5-6" fill="none" stroke="#000000" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       <div class="serif" style="font-size:58px;font-weight:700">Nothing left your Mac in this meeting</div></div>
       <div id="bytes" class="mono" style="font-size:40px;margin-top:60px">Meeting data sent: 0 bytes</div>
       <div class="mono" style="font-size:24px;margin-top:40px;opacity:.65">No analytics · no accounts · no Chitter servers</div>
     </div>
   </div>
   <div id="s5" class="abs" style="inset:0">
-    <div id="s5h" class="abs mono" style="left:90px;top:80px;font-size:26px;letter-spacing:4px;color:#31A092">04 · COST</div>
-    <div id="rc" class="abs mono" style="left:660px;top:190px;width:600px;padding:44px;background:#fbf8f1;color:#1C1B26;font-size:30px;box-sizing:border-box;box-shadow:0 30px 70px rgba(0,0,0,.5)"><div id="rl"></div></div>
+    <div id="s5h" class="abs mono" style="left:90px;top:80px;font-size:26px;letter-spacing:4px;color:#3DFFA8">04 · COST</div>
+    <div id="rc" class="abs mono" style="left:660px;top:190px;width:600px;padding:44px;background:#0B0B12;color:#F4F6FF;font-size:30px;box-sizing:border-box;box-shadow:0 30px 70px rgba(0,0,0,.5)"><div id="rl"></div></div>
   </div>
   <div id="s6" class="abs" style="inset:0">
     <div id="e1" class="abs serif" style="left:0;width:1920px;top:360px;text-align:center;font-size:110px;font-weight:700">Chitter</div>
-    <div id="e2" class="abs serif" style="left:0;width:1920px;top:520px;text-align:center;font-size:50px;font-style:italic;color:#E9B53A">Catch every word. Keep what matters.</div>
+    <div id="e2" class="abs serif" style="left:0;width:1920px;top:520px;text-align:center;font-size:50px;color:#00E5FF">Catch every word. Keep what matters.</div>
     <div id="e3" class="abs mono" style="left:0;width:1920px;top:650px;text-align:center;font-size:28px;letter-spacing:3px;opacity:.8">FREE · OPEN SOURCE · macOS 14.4+ · NOTHING LEAVES YOUR MAC</div>
   </div>
 </div>
@@ -103,9 +124,9 @@ function render(t){
  op($('s3h'),ease(seg(t,12.8,13.4)));ee=ease(seg(t,13,13.8));op($('s3t'),ee);tr($('s3t'),0,(1-ee)*24);
  var act=-1;T.forEach(function(x,j){if(t>=x[0]&&t<x[0]+2.5)act=j});
  L.forEach(function(r,i){var d=$('r'+i);var a=ease(seg(t,13.6+i*.18,14.2+i*.18));op(d,a);tr(d,(1-a)*-30,0);
-  var on=act>=0&&T[act][2]==i;d.style.background=on?'rgba(233,181,58,.28)':'transparent';d.style.borderLeftColor=on?'#E9B53A':'#2E9C8E'});
+  var on=act>=0&&T[act][2]==i;d.style.background=on?'rgba(255,43,214,.24)':'#0B0B12';d.style.borderColor=on?'#FF2BD6':'rgba(0,229,255,.28)'});
  I.forEach(function(it,k){var d=$('i'+k);var a=ease(seg(t,14.8+k*.22,15.5+k*.22));op(d,a);tr(d,(1-a)*30,0);
-  if(it[0]!='h'){var on=act>=0&&T[act][1]==k;d.style.background=on?'rgba(233,181,58,.22)':'transparent'}});
+  if(it[0]!='h'){var on=act>=0&&T[act][1]==k;d.style.background=on?'rgba(255,43,214,.22)':'transparent'}});
  var th=$('th');
  if(act>=0){var x=T[act],p=ease(seg(t,x[0],x[0]+.45)),fade=1-seg(t,x[0]+2,x[0]+2.5);
   var it=I[x[1]],ix=1010,iy=it[2]+34,rx=890,ry=rowY[x[2]]+L[x[2]][1]/2;
@@ -116,7 +137,7 @@ function render(t){
  $('bytes').style.opacity=ease(seg(t,28,28.6));
  op($('s5h'),ease(seg(t,31.2,31.8)));e=ease(seg(t,31.2,32));op($('rc'),e);tr($('rc'),0,(1-e)*50);
  var rl=[["Live subtitles","$0.00"],["Interpreting","$0.00"],["Meeting notes","$0.00"],["Search & export","$0.00"],["Account","none"],["TOTAL","$0.00"]];
- var h='';rl.forEach(function(r,i){var a=ease(seg(t,32+i*.25,32.4+i*.25));var big=r[0]=='TOTAL';h+='<div style="display:flex;justify-content:space-between;padding:10px 0;'+(big?'border-top:3px solid #1C1B26;margin-top:12px;font-size:44px;font-weight:700;':'border-bottom:2px dotted #8a8577;')+'opacity:'+a+'"><span>'+r[0]+'</span><span>'+r[1]+'</span></div>'});$('rl').innerHTML=h;
+ var h='';rl.forEach(function(r,i){var a=ease(seg(t,32+i*.25,32.4+i*.25));var big=r[0]=='TOTAL';h+='<div style="display:flex;justify-content:space-between;padding:10px 0;'+(big?'border-top:3px solid #3DFFA8;margin-top:12px;font-size:44px;font-weight:700;':'border-bottom:2px dotted rgba(169,175,203,.5);')+'opacity:'+a+'"><span>'+r[0]+'</span><span>'+r[1]+'</span></div>'});$('rl').innerHTML=h;
  e=ease(seg(t,34.8,35.6));op($('e1'),e);tr($('e1'),0,(1-e)*30);
  op($('e2'),ease(seg(t,35.4,36.2)));op($('e3'),ease(seg(t,36,36.8)));
 }
