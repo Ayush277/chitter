@@ -1,6 +1,6 @@
 <!doctype html><meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="require-trusted-types-for 'script'">   <!-- the same rule Google Meet enforces --><title>smoke</title><body><pre id="out">running…</pre>
-<script src="../core.js?v=3"></script><script src="../page.js?v=3"></script>
+<script src="../core.js?v=5"></script><script src="../page.js?v=5"></script>
 <script>
 // A real loopback WebRTC call inside this page: peer A sends an audio tone, peer B receives it as a "remote participant".
 window.addEventListener('error', e => { document.getElementById('out').textContent += '\nERROR ' + e.message; });
@@ -13,10 +13,18 @@ window.addEventListener('error', e => { document.getElementById('out').textConte
     log.push('instanceof=' + (a instanceof RTCPeerConnection));
     a.onicecandidate = e => e.candidate && b.addIceCandidate(e.candidate); b.onicecandidate = e => e.candidate && a.addIceCandidate(e.candidate);
     dst.stream.getTracks().forEach(t => a.addTrack(t, dst.stream));
+    const osc2 = ac.createOscillator(); osc2.frequency.value = 330; const dst2 = ac.createMediaStreamDestination(); osc2.connect(dst2); osc2.start();
+    dst2.stream.getTracks().forEach(t => a.addTrack(t, dst2.stream));     // a second participant
+    await ac.resume();
     await a.setLocalDescription(await a.createOffer()); await b.setRemoteDescription(a.localDescription);
     await b.setLocalDescription(await b.createAnswer()); await a.setRemoteDescription(b.localDescription);
     await new Promise(r => setTimeout(r, 1500));
-    log.push('pipelines=' + window.__chitter.pipelines.size);
+    const m = window.__chitter.mixer(); await m.ctx.resume();
+    await new Promise(r => setTimeout(r, 800));
+    const buf = new Float32Array(m.analyser.fftSize); m.analyser.getFloatTimeDomainData(buf);
+    log.push('participantsMixed=' + m.sources.size);
+    log.push('recognisers=' + window.__chitter.pipelines.size + ' [' + [...window.__chitter.pipelines.keys()].join(',') + ']');
+    log.push('mixedAudioLevel=' + Math.sqrt(buf.reduce((x, v) => x + v * v, 0) / buf.length).toFixed(3) + ' context=' + m.ctx.state);
     log.push('overlayMounted=' + (document.body.lastElementChild && document.body.lastElementChild.shadowRoot === null /* closed root */));
     log.push('SpeechRecognition=' + typeof (window.SpeechRecognition || window.webkitSpeechRecognition));
   } catch (e) { log.push('EXC ' + e.message); }

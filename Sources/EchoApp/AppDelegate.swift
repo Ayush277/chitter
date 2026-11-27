@@ -32,8 +32,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem(title: L("Settings…"), action: #selector(openSettings), keyEquivalent: ","))
         menu.addItem(NSMenuItem(title: L("Welcome tour"), action: #selector(openWelcome), keyEquivalent: ""))
         menu.addItem(.separator())
+        menu.addItem(NSMenuItem(title: "Live transcript panel  (⌃⌥L)", action: #selector(toggleLivePanel), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Open Notes  (⌃⌥N)", action: #selector(openNotes), keyEquivalent: ""))
-        interpretItem = NSMenuItem(title: "Interpret my voice  (hold right ⌥)", action: #selector(toggleInterpret), keyEquivalent: "")
+        interpretItem = NSMenuItem(title: "Interpret my voice", action: #selector(toggleInterpret), keyEquivalent: "")
         menu.addItem(interpretItem)
         menu.addItem(NSMenuItem(title: L("Try the sample meeting"), action: #selector(playSample), keyEquivalent: ""))
         menu.addItem(.separator())
@@ -41,6 +42,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.items.forEach { $0.target = self }
         item.menu = menu
         statusItem = item
+        settingsModel.onSubtitleModeChange = { [weak self] mode in self?.session.ribbonModel.mode = mode; self?.session.livePanel.model.mode = mode }
+        settingsModel.onInterpretModeChange = { [weak self] in
+            Task { @MainActor in
+                guard let self, let problem = await self.session.interpreter.reconfigure() else { return }
+                self.interpretItem.state = .off; self.settingsModel.voiceMessage = problem
+            }
+        }
+        settingsModel.micProvider = { AudioDevices.microphones() }
+        settingsModel.voiceProvider = { SpeechPlayer.voices(for: $0) }
+        settingsModel.previewVoice = { [weak self] language in self?.previewVoice(language) }
+        settingsModel.requestPersonalVoice = { await SpeechPlayer.requestPersonalVoice() }
+        settingsModel.setupProvider = { Self.interpreterSetup() }
+        session.wireInterpreter()
         let health: () async -> [EngineHealth] = { [weak self] in await self?.engineHealth() ?? [] }
         settingsModel.healthProvider = health
         settingsModel.onAccessibilityChange = { [weak self] on in self?.session.ribbonModel.accessibilityMode = on; self?.session.notesVM.accessibilityMode = on }
@@ -59,9 +73,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if !Prefs.onboarded { onboardingWindow.show() }
         session.onStateChange = { [weak self] in self?.refresh() }
         refresh()
+        // QA: `--listen <seconds>` runs a real meeting on live system audio, then quits and prints where it was saved.
+        if let i = CommandLine.arguments.firstIndex(of: "--listen"), i + 1 < CommandLine.arguments.count, let secs = Double(CommandLine.arguments[i + 1]) {
+            Task {
+                await self.session.start(title: "QA live check")
+                print("listening: \(self.session.status)"); fflush(stdout)
+                self.session.livePanel.show()
+                try? await Task.sleep(nanoseconds: UInt64(secs * 1e9))
+                if let dir = CommandLine.arguments.firstIndex(of: "--snapshot").map({ CommandLine.arguments[$0 + 1] }) { self.snapshot(into: dir) }
+                let saved = self.session.meeting?.dir.path ?? ""
+                self.session.stop()
+                try? await Task.sleep(nanoseconds: 30_000_000_000)      // final notes
+                print("saved: \(saved)"); fflush(stdout)
+                NSApp.terminate(nil)
+            }
+        }
         if CommandLine.arguments.contains("--sample") { Task { await self.session.playSample() } }   // used by QA scripts
         Hotkeys.shared.register(keyCode: kVK_ANSI_R, id: 1) { [weak self] in MainActor.assumeIsolated { self?.session.toggleListening() } }
         Hotkeys.shared.register(keyCode: kVK_ANSI_N, id: 3) { [weak self] in MainActor.assumeIsolated { self?.openNotes() } }
+        Hotkeys.shared.register(keyCode: kVK_ANSI_L, id: 4) { [weak self] in MainActor.assumeIsolated { self?.session.livePanel.toggle() } }
         Hotkeys.shared.register(keyCode: kVK_ANSI_S, id: 2) { [weak self] in MainActor.assumeIsolated { self?.session.toggleRibbon() } }
     }
 
@@ -70,6 +100,55 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let name = listening ? "waveform.circle.fill" : "waveform.circle"
         statusItem?.button?.image = NSImage(systemSymbolName: name, accessibilityDescription: listening ? "Chitter, listening" : "Chitter, idle")
         startItem.title = listening ? L("Stop listening  (⌃⌥R)") : L("Start listening  (⌃⌥R)")
+    }
+
+    /// QA: draws Chitter's own views into PNG files (no screen recording needed, nothing else on screen is captured).
+    @MainActor func snapshot(into dir: String) {
+        func save<V: View>(_ view: V, _ size: NSSize, _ name: String) {
+            let host = NSHostingView(rootView: view.frame(width: size.width, height: size.height).background(Color(NSColor.windowBackgroundColor)))
+            let w = NSWindow(contentRect: NSRect(origin: NSPoint(x: -4000, y: -4000), size: size), styleMask: [.titled], backing: .buffered, defer: false)
+            w.contentView = host; w.orderFrontRegardless()
+            RunLoop.current.run(until: Date().addingTimeInterval(1.2))
+            guard let rep = host.bitmapImageRepForCachingDisplay(in: host.bounds) else { return }
+            host.cacheDisplay(in: host.bounds, to: rep)
+            try? rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: dir).appendingPathComponent(name))
+            w.orderOut(nil)
+        }
+        for tab in ["languages", "interpreting", "words"] {
+            settingsModel.tab = tab
+            save(SettingsView(model: settingsModel), NSSize(width: 732, height: 552), "settings-\(tab).png")
+        }
+        save(session.livePanel.snapshotView(), NSSize(width: 340, height: 480), "live-panel.png")
+    }
+
+    @MainActor @objc func toggleLivePanel() { session.livePanel.toggle() }
+
+    private let previewPlayer = SpeechPlayer()
+    @MainActor func previewVoice(_ language: String) {
+        let samples = ["en": "This is how I will sound in your call.", "es": "Así sonaré en tu llamada.", "fr": "Voici ma voix pendant l'appel.",
+                       "de": "So klinge ich in deinem Anruf.", "it": "Ecco come suonerò nella chiamata.", "pt": "É assim que vou soar na chamada.",
+                       "zh": "我在通话中听起来是这样的。", "ja": "通話ではこのような声になります。", "ko": "통화에서는 이런 목소리로 들립니다.", "ru": "Так я буду звучать в звонке."]
+        let player = previewPlayer
+        Task { let b = await player.synthesize(samples[String(language.prefix(2))] ?? samples["en"]!, language: language); await player.play(b, deviceID: nil) }
+    }
+
+    /// What interpreting needs, each with how to fix it.
+    static func interpreterSetup() -> [EngineHealth] {
+        let mic = MicRecorder.authorization() == .authorized
+        let keys = CGPreflightListenEventAccess()
+        let bh = BlackHoleInstaller.isInstalled
+        var out = [
+            EngineHealth(name: "Virtual microphone", detail: bh ? "BlackHole 2ch is installed" : "Not installed. Turn on “Interpret my voice” from the menu to install it.", level: bh ? .ok : .warn),
+            EngineHealth(name: "Microphone access", detail: mic ? "Allowed" : "Allow Chitter in System Settings → Privacy & Security → Microphone", level: mic ? .ok : .warn),
+        ]
+        if !Prefs.handsFree {
+            out.append(EngineHealth(name: "Right ⌥ key", detail: keys ? "Chitter can see the key" : "Allow Chitter in System Settings → Privacy & Security → Input Monitoring, then reopen Chitter", level: keys ? .ok : .warn))
+        }
+        if bh, let current = AudioDevices.defaultInput(), let d = AudioDevices.all().first(where: { $0.id == current }) {
+            let stuck = d.name.localizedCaseInsensitiveContains("BlackHole")
+            out.append(EngineHealth(name: "System microphone", detail: stuck ? "It is set to BlackHole, so apps can't hear your real voice. Change it in System Settings → Sound → Input." : d.name, level: stuck ? .warn : .ok))
+        }
+        return out
     }
 
     @MainActor @objc func openLedger() { ledgerWindow.show() }

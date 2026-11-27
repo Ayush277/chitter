@@ -17,3 +17,7 @@
 2026-11-24 | Name check: brew search chitter → no match; GitHub search → only Twitter-clone teaching repos and unrelated tools, no meeting/transcription product | Keep Chitter, repo slug chitter, bundle app.chitter.mac
 2026-11-24 | gh not installed → no repo created or pushed; docs/PUBLISH.md has the exact commands; site/cask use the placeholder OWNER | Decision table: gh not logged in
 2026-11-25 | Public repo: commits rewritten to author 'Ayush Kumar <Ayush277@users.noreply.github.com>' before the first push | Original author email was a local machine name (ayush@Ayushs-Mac-2.local); nothing had been pushed yet. Narration audio and duplicate MP4s are not tracked (site/media holds the published copies)
+2026-11-27 | Extension mixes all remote call audio into one stream for a single recogniser; per-participant speaker labels dropped | Several recognisers competed with each other; working captions matter more than speaker chips
+2026-11-27 | "Caption this tab" (tabCapture, needs a click) added beside the automatic WebRTC path | Covers sites that don't deliver call audio as WebRTC tracks
+2026-11-27 | Own-voice option is macOS Personal Voice, not a paid cloning API | Free and on-device; limited to the languages it was recorded in
+2026-11-27 | If translation fails while interpreting, send nothing | Speaking untranslated words into a call is worse than silence

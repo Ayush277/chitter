@@ -46,20 +46,60 @@ final class Interpreter {
     private(set) var enabled = false
     var translators: TranslatorChain
     private(set) var lastLatency: Double?
+    /// true while the interpreter is listening to you, so meeting captions don't transcribe the same words twice.
+    var onCapture: ((Bool) -> Void)?
+    /// (what you said, what was spoken into the call)
+    var onInterpreted: ((String, String) -> Void)?
+    private let segments = SegmenterBox()
+    private var queue: Task<Void, Never>?
+    private(set) var handsFree = false
 
     init(translators: TranslatorChain) { self.translators = translators }
 
     // MARK: enable / disable
     func enable() async -> String? {
         guard await MicRecorder.requestAccess() else { return "Microphone access is needed to interpret your voice. Allow it in System Settings → Privacy & Security → Microphone." }
-        if !CGPreflightListenEventAccess() { _ = CGRequestListenEventAccess() }   // Input Monitoring, requested only now
-        installMonitors()
         enabled = true
+        if Prefs.handsFree {
+            if let problem = startHandsFree() { enabled = false; return problem }
+        } else {
+            if !CGPreflightListenEventAccess() { _ = CGRequestListenEventAccess() }   // Input Monitoring, requested only now
+            installMonitors()
+            model.state = "Hold right ⌥ to speak"
+        }
         model.route = AudioDevices.blackHole() == nil ? "BlackHole not installed — you'll hear it locally" : "Routing to BlackHole 2ch"
         showPanel(true)
         return nil
     }
-    func disable() { monitors.forEach(NSEvent.removeMonitor); monitors = []; enabled = false; router.restore(); showPanel(false) }
+    func disable() {
+        monitors.forEach(NSEvent.removeMonitor); monitors = []
+        if handsFree || optionDown { _ = mic.stop() }
+        mic.onSamples = nil; segments.reset(); handsFree = false; optionDown = false
+        enabled = false; model.active = false; onCapture?(false); router.restore(); showPanel(false)
+    }
+    /// Applies a changed setting (hold-to-talk ↔ hands-free) while interpreting is on.
+    func reconfigure() async -> String? { guard enabled else { return nil }; disable(); return await enable() }
+
+    /// No key to hold: the mic stays open and each sentence is sent after a 1-second pause.
+    private func startHandsFree() -> String? {
+        segments.reset()
+        mic.keepSamples = false
+        mic.onLevel = { [weak self] l in Task { @MainActor in self?.model.level = l } }
+        mic.onSamples = { [weak self, segments] chunk in
+            guard let utterance = segments.feed(chunk) else { return }
+            Task { @MainActor in self?.enqueue(utterance) }
+        }
+        do { try mic.start() } catch { return "Couldn't open the microphone: \(error.localizedDescription)" }
+        handsFree = true; model.active = true; model.state = "Hands-free: just talk"
+        onCapture?(true)
+        return nil
+    }
+
+    /// Utterances are interpreted strictly in the order they were spoken.
+    private func enqueue(_ samples: [Float]) {
+        let previous = queue
+        queue = Task { [weak self] in await previous?.value; await self?.process(samples) }
+    }
     func shutdown() { disable() }       // called on quit → mic restored
 
     private func installMonitors() {
@@ -80,6 +120,8 @@ final class Interpreter {
     }
 
     private func beginSpeaking() {
+        onCapture?(true)
+        mic.keepSamples = true; mic.onSamples = nil
         mic.onLevel = { [weak self] l in Task { @MainActor in self?.model.level = l } }
         do { try mic.start(); model.active = true; model.state = "Listening…" }
         catch { model.state = "Mic error: \(error.localizedDescription)" }
@@ -87,26 +129,33 @@ final class Interpreter {
 
     private func endSpeaking() {
         let samples = mic.stop(); model.active = false; model.level = 0
-        guard samples.count > 6_400 else { model.state = "Too short — hold the key while you talk"; return }
+        guard samples.count > 6_400 else { model.state = "Too short — hold the key while you talk"; onCapture?(false); return }
         model.state = "Interpreting…"
-        Task { await process(samples) }
+        enqueue(samples)
     }
 
     // MARK: pipeline
     func process(_ samples: [Float]) async {
         let t0 = Date()
         let from = Prefs.speakLanguage, to = Prefs.interpretTarget
-        guard let text = await Self.recognize(samples, language: from), !text.isEmpty else { model.state = "Didn't catch that"; return }
+        defer { if !handsFree && !optionDown { onCapture?(false) } }
+        guard let heard = await Self.recognize(samples, language: from), !heard.isEmpty else { model.state = "Didn't catch that"; return }
+        let text = Prefs.wordList.apply(to: heard)
         let tASR = Date().timeIntervalSince(t0)
-        let translated = await translators.translate(text, from: from, to: to) ?? text
+        let result = await translators.translate(text, from: from, to: to)
+        // Never send your words untranslated into the call by accident.
+        guard let translated = result ?? (Lang.base(from) == Lang.base(to) ? text : nil) else { model.state = "Translation unavailable, so nothing was sent"; return }
         let tTr = Date().timeIntervalSince(t0)
         let buffers = await player.synthesize(translated, language: to)
         let tTTS = Date().timeIntervalSince(t0)
         lastLatency = tTTS
         model.state = "“\(translated)”"
         let bh = AudioDevices.blackHole()
-        if bh != nil { router.routeToBlackHole() }
+        if bh != nil && Prefs.switchSystemMic { router.routeToBlackHole() }
+        onInterpreted?(text, translated)
+        segments.muted = true            // don't re-interpret our own voice if it reaches the mic
         await player.play(buffers, deviceID: bh?.id)
+        segments.muted = false
         router.restore()                 // original mic comes back right after playback
         model.state = String(format: "Done in %.1fs (ASR %.1f · translate %.1f · voice %.1f)", tTTS, tASR, tTr - tASR, tTTS - tTr)
     }
@@ -144,4 +193,17 @@ final class Interpreter {
         }
         show ? panel?.orderFrontRegardless() : panel?.orderOut(nil)
     }
+}
+
+/// Lets the audio thread feed the hands-free segmenter safely.
+final class SegmenterBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var segmenter = UtteranceSegmenter(pauseSeconds: 1.0)
+    private var isMuted = false
+    var muted: Bool {
+        get { lock.lock(); defer { lock.unlock() }; return isMuted }
+        set { lock.lock(); isMuted = newValue; segmenter.reset(); lock.unlock() }
+    }
+    func feed(_ chunk: [Float]) -> [Float]? { lock.lock(); defer { lock.unlock() }; return isMuted ? nil : segmenter.feed(chunk) }
+    func reset() { lock.lock(); segmenter.reset(); isMuted = false; lock.unlock() }
 }

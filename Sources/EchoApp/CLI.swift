@@ -203,6 +203,42 @@ enum CLI {
         return 0
     }
 
+    /// `Chitter --live-test <seconds> [--target en]` — the real live chain: system audio tap → speech (auto language) → translation.
+    /// Run it with `open -n -W --stdout out.txt build/Chitter.app --args --live-test 30` so macOS asks permission for Chitter itself.
+    static func liveTest(_ args: [String]) async -> Int32 {
+        func opt(_ n: String) -> String? { args.firstIndex(of: n).flatMap { $0 + 1 < args.count ? args[$0 + 1] : nil } }
+        let secs = opt("--live-test").flatMap(Double.init) ?? 30, target = opt("--target") ?? "en"
+        var chain: [Translator] = []
+        #if compiler(>=6.2)
+        if #available(macOS 26, *) { chain.append(AppleTranslator()); chain.append(AppleModelTranslator()); await AppleModelTranslator.warmUp() }
+        #endif
+        let translators = TranslatorChain(chain)
+        let engine = ASRFactory.makeMultilingual()
+        do { try await engine.start(locale: Locale(identifier: "en-US")) } catch { print("speech engine failed: \(error)"); return 1 }
+        let t0 = Date()
+        let consumer = Task {
+            var finals = 0
+            for await r in engine.results where r.isFinal {
+                let heardAt = Date().timeIntervalSince(t0)
+                let tr = await translators.translate(r.text, from: r.language, to: target)
+                finals += 1
+                print(String(format: "%.1fs [%@] %@", heardAt, r.language ?? "?", r.text))
+                if let tr { print(String(format: "%.1fs   → %@", Date().timeIntervalSince(t0), tr)) }
+                fflush(stdout)
+            }
+            return finals
+        }
+        let tap = SystemAudioTap()
+        do { try tap.start { engine.append($0) } } catch { print("capture failed: \(error)"); return 1 }
+        print("listening for \(Int(secs))s"); fflush(stdout)
+        try? await Task.sleep(nanoseconds: UInt64(secs * 1e9))
+        tap.stop()
+        await engine.finish()
+        let n = await consumer.value
+        print("finals: \(n)")
+        return n > 0 ? 0 : 1
+    }
+
     static func run(_ args: [String]) async -> Int32 {
         func opt(_ n: String) -> String? { args.firstIndex(of: n).flatMap { $0 + 1 < args.count ? args[$0 + 1] : nil } }
         guard let path = opt("--transcribe") else { return 2 }

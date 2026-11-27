@@ -89,6 +89,16 @@ struct Warp: View {
     @ObservedObject var vm: NotesViewModel
     let fg: Color, surface: Color
     var body: some View {
+        VStack(spacing: 0) {
+            Picker("Transcript shows", selection: $vm.transcriptMode) {
+                ForEach(SubtitleMode.allCases, id: \.self) { Text($0.label).tag($0) }
+            }
+            .pickerStyle(.segmented).labelsHidden().frame(maxWidth: 320).padding(.top, 10)
+            .accessibilityLabel("Transcript shows both languages, the translation, or the original")
+            list
+        }
+    }
+    var list: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
@@ -97,7 +107,7 @@ struct Warp: View {
                             .foregroundStyle(fg.opacity(0.7)).padding(24)
                     }
                     ForEach(vm.segments) { s in
-                        WarpRow(seg: s, active: vm.activeLines.contains(s.id), fg: fg, big: vm.accessibilityMode)
+                        WarpRow(seg: s, active: vm.activeLines.contains(s.id), fg: fg, big: vm.accessibilityMode, mode: vm.transcriptMode)
                             .id(s.id)
                             .anchorPreference(key: ThreadKey.self, value: .bounds) { ThreadAnchors(lines: [s.id: $0]) }
                     }
@@ -115,6 +125,7 @@ struct Warp: View {
 
 struct WarpRow: View {
     let seg: Segment, active: Bool, fg: Color, big: Bool
+    var mode: SubtitleMode = .both
     @Environment(\.colorScheme) private var scheme
     var body: some View {
         let thread = Tokens.thread(seg.speaker)
@@ -128,11 +139,15 @@ struct WarpRow: View {
                 HStack(spacing: 6) {
                     Text("L\(seg.id)").font(.system(.caption, design: .monospaced)).foregroundStyle(fg.opacity(0.6))
                     Text(Exporter.timeLabel(seg.start)).font(.system(.caption, design: .monospaced)).foregroundStyle(fg.opacity(0.5))
+                    if seg.interpreted == true { InterpretedTag() }
                 }
-                Text(seg.text).font(.system(size: big ? 22 : 14))
-                    .underline(seg.confidence.map { $0 < 0.6 } ?? false, pattern: .dot, color: Tokens.madder.color)
-                    .foregroundStyle(fg)
-                if let t = seg.translation, !t.isEmpty {
+                let shown = mode.visible(original: seg.text, translation: seg.translation)
+                if let original = shown.original {
+                    Text(original).font(.system(size: big ? 22 : 14))
+                        .underline(seg.confidence.map { $0 < 0.6 } ?? false, pattern: .dot, color: Tokens.madder.color)
+                        .foregroundStyle(fg)
+                }
+                if let t = shown.translation {
                     Text(t).font(.system(size: big ? 22 : 14, design: .serif)).foregroundStyle(Tokens.translationText(dark: scheme == .dark).color)
                 }
             }
@@ -143,6 +158,14 @@ struct WarpRow: View {
         .overlay(alignment: .leading) { if active { Rectangle().fill(Tokens.weld.color).frame(width: 3) } }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Line \(seg.id), speaker \(Tokens.speakerInitial(seg.speaker)): \(seg.text)")
+    }
+}
+
+struct InterpretedTag: View {
+    var body: some View {
+        Text("You · Interpreted").font(.caption2.weight(.semibold))
+            .padding(.horizontal, 6).padding(.vertical, 1)
+            .background(Capsule().fill(Tokens.weld.color.opacity(0.3)))
     }
 }
 

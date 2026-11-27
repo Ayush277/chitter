@@ -30,6 +30,31 @@ public final class SettingsModel: ObservableObject {
     @Published public var savedKeys: Set<String> = []
     @Published public var health: [EngineHealth] = []
     @Published public var storagePath = MeetingStore.defaultRoot.path
+    @Published public var tab = "languages"
+    @Published public var subtitleMode = Prefs.subtitleMode { didSet { Prefs.subtitleMode = subtitleMode; onSubtitleModeChange?(subtitleMode) } }
+    @Published public var notesInMine = Prefs.notesInMyLanguage { didSet { Prefs.notesInMyLanguage = notesInMine } }
+    @Published public var wordList = Prefs.wordListText { didSet { Prefs.wordListText = wordList } }
+    @Published public var handsFree = Prefs.handsFree { didSet { Prefs.handsFree = handsFree; onInterpretModeChange?() } }
+    @Published public var switchSystemMic = Prefs.switchSystemMic { didSet { Prefs.switchSystemMic = switchSystemMic } }
+    @Published public var micUID = Prefs.micDeviceUID { didSet { Prefs.micDeviceUID = micUID; onInterpretModeChange?() } }
+    @Published public var voiceChoice: [String: String] = [:]
+    @Published public var voiceMessage = ""
+    @Published public var microphones: [(uid: String, name: String)] = []
+    @Published public var checks: [EngineHealth] = []
+    public var onSubtitleModeChange: ((SubtitleMode) -> Void)?
+    public var onInterpretModeChange: (() -> Void)?
+    public var micProvider: () -> [(uid: String, name: String)] = { [] }
+    public var voiceProvider: (String) -> [(id: String, name: String)] = { _ in [] }
+    public var previewVoice: (String) -> Void = { _ in }
+    public var requestPersonalVoice: () async -> String = { "" }
+    public var setupProvider: () async -> [EngineHealth] = { [] }
+
+    public func voice(for language: String) -> Binding<String> {
+        let key = "voice." + String(language.prefix(2))
+        return Binding(get: { self.voiceChoice[key] ?? Prefs.d.string(forKey: key) ?? "" },
+                       set: { self.voiceChoice[key] = $0; Prefs.d.set($0.isEmpty ? nil : $0, forKey: key) })
+    }
+    public func refreshInterpreting() { microphones = micProvider(); Task { checks = await setupProvider() } }
     public var onAccessibilityChange: ((Bool) -> Void)?
     public var healthProvider: () async -> [EngineHealth] = { [] }
 
@@ -58,16 +83,18 @@ public struct SettingsView: View {
     static let languages: [(String, String)] = [("en", "English"), ("es", "Español"), ("fr", "Français"), ("de", "Deutsch"), ("it", "Italiano"), ("pt", "Português"),
                                                 ("zh", "中文"), ("ja", "日本語"), ("ko", "한국어"), ("ru", "Русский")]
     public var body: some View {
-        TabView {
-            languagesTab.tabItem { Label("Languages", systemImage: "globe") }
-            enginesTab.tabItem { Label("Engines", systemImage: "gearshape.2") }
-            hotkeysTab.tabItem { Label("Hotkeys", systemImage: "keyboard") }
-            storageTab.tabItem { Label("Storage", systemImage: "folder") }
-            privacyTab.tabItem { Label("Privacy", systemImage: "lock.shield") }
-            accessibilityTab.tabItem { Label("Accessibility", systemImage: "accessibility") }
-            aboutTab.tabItem { Label("About", systemImage: "info.circle") }
+        TabView(selection: $m.tab) {
+            languagesTab.tag("languages").tabItem { Label("Languages", systemImage: "globe") }
+            interpretingTab.tag("interpreting").tabItem { Label("Interpreting", systemImage: "mic") }
+            wordsTab.tag("words").tabItem { Label("Words", systemImage: "character.book.closed") }
+            enginesTab.tag("engines").tabItem { Label("Engines", systemImage: "gearshape.2") }
+            hotkeysTab.tag("hotkeys").tabItem { Label("Hotkeys", systemImage: "keyboard") }
+            storageTab.tag("storage").tabItem { Label("Storage", systemImage: "folder") }
+            privacyTab.tag("privacy").tabItem { Label("Privacy", systemImage: "lock.shield") }
+            accessibilityTab.tag("accessibility").tabItem { Label("Accessibility", systemImage: "accessibility") }
+            aboutTab.tag("about").tabItem { Label("About", systemImage: "info.circle") }
         }
-        .frame(width: 620, height: 460).padding()
+        .frame(width: 700, height: 520).padding()
         .onAppear { m.refreshHealth() }
     }
 
@@ -78,8 +105,94 @@ public struct SettingsView: View {
         }
     }
 
+    func name(_ code: String) -> String { Self.languages.first { $0.0 == code }?.1 ?? code }
+
+    /// The whole language setup at a glance: what they say, what you read, what you say, what they hear.
+    var languageSummary: some View {
+        func chip(_ t: String, strong: Bool = false) -> some View {
+            Text(t).font(.callout.weight(.semibold)).padding(.horizontal, 10).padding(.vertical, 3)
+                .background(Capsule().fill(strong ? Tokens.weld.color : Tokens.textLight.color.opacity(0.14)))
+                .foregroundStyle(strong ? Tokens.ink.color : Tokens.textLight.color)
+        }
+        func line(_ lead: String, _ from: String, _ verb: String, _ to: String) -> some View {
+            HStack(spacing: 8) {
+                Text(lead).frame(width: 64, alignment: .leading); chip(from)
+                Image(systemName: "arrow.right").accessibilityHidden(true)
+                Text(verb); chip(to, strong: true)
+            }.foregroundStyle(Tokens.textLight.color).accessibilityElement(children: .combine)
+        }
+        return VStack(alignment: .leading, spacing: 8) {
+            line("They say", m.sourceLanguage == "auto" ? "Any language" : name(m.sourceLanguage), "Subtitles", name(m.targetLanguage))
+            line("You say", name(m.speakLanguage), "They hear", name(m.interpretTarget))
+        }
+        .padding(14).frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 12).fill(Tokens.ink.color))
+    }
+
+    var interpretingTab: some View {
+        Form {
+            Section("Speaking") {
+                Picker("How to talk", selection: $m.handsFree) {
+                    Text("Hold right ⌥").tag(false); Text("Hands-free (sends after a 1-second pause)").tag(true)
+                }
+                langPicker("I speak", $m.speakLanguage)
+                langPicker("They hear", $m.interpretTarget)
+            }
+            Section("Voices") {
+                voiceRow("Voice they hear (\(name(m.interpretTarget)))", language: m.interpretTarget)
+                voiceRow("Voice I hear (\(name(m.targetLanguage)))", language: m.targetLanguage)
+                Button("Use my own voice (macOS Personal Voice)…") { Task { m.voiceMessage = await m.requestPersonalVoice(); m.voiceChoice = [:]; m.refreshInterpreting() } }
+                Text(m.voiceMessage.isEmpty ? "Free and on this Mac. A Personal Voice only speaks the languages it was recorded in." : m.voiceMessage)
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Section("Microphone") {
+                Picker("Chitter listens through", selection: $m.micUID) {
+                    Text("System default").tag("")
+                    ForEach(m.microphones, id: \.uid) { Text($0.name).tag($0.uid) }
+                }
+                Toggle("Switch the system mic to BlackHole while a translation plays, then switch back", isOn: $m.switchSystemMic)
+            }
+            Section("Setup check") {
+                ForEach(m.checks) { h in
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Image(systemName: h.level == .ok ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
+                            .foregroundStyle(color(h.level)).accessibilityHidden(true)
+                        VStack(alignment: .leading) { Text(h.name); Text(h.detail).font(.caption).foregroundStyle(.secondary) }
+                    }.accessibilityElement(children: .combine).accessibilityLabel("\(h.name): \(h.detail), \(label(h.level))")
+                }
+                Button("Check again") { m.refreshInterpreting() }
+                Text("In your call app, choose “BlackHole 2ch” as the microphone while you want only the translation to be heard. “Same as system” also works with the switch above on.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }.formStyle(.grouped).onAppear { m.refreshInterpreting() }
+    }
+
+    func voiceRow(_ title: String, language: String) -> some View {
+        HStack {
+            Picker(title, selection: m.voice(for: language)) {
+                Text("Best installed voice").tag("")
+                ForEach(m.voiceProvider(language), id: \.id) { Text($0.name).tag($0.id) }
+            }
+            Button { m.previewVoice(language) } label: { Image(systemName: "play.circle.fill") }
+                .buttonStyle(.borderless).accessibilityLabel("Play a sample of this voice")
+        }
+    }
+
+    var wordsTab: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Names and jargon").font(.headline)
+            Text("One per line. Write a name to fix its spelling and keep it untranslated, or “heard => Correct” to fix something Chitter keeps mishearing.")
+                .font(.callout).foregroundStyle(.secondary)
+            TextEditor(text: $m.wordList).font(.system(.body, design: .monospaced))
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(.secondary.opacity(0.4)))
+                .accessibilityLabel("Word list, one entry per line")
+            Text("Example:  Chitter\n                  chit her => Chitter").font(.system(.caption, design: .monospaced)).foregroundStyle(.secondary)
+        }.padding()
+    }
+
     var languagesTab: some View {
         Form {
+            Section { languageSummary }
             Section("Calls") {
                 Toggle("Start automatically when a call begins (Zoom, Teams, Meet in any browser…)", isOn: $m.autoStart)
                 Toggle("Speak other people's foreign speech aloud in my language", isOn: $m.dub)
@@ -88,12 +201,13 @@ public struct SettingsView: View {
             Section("Subtitles") {
                 langPicker("Language being spoken", $m.sourceLanguage, auto: true)
                 langPicker("Show translation in", $m.targetLanguage)
+                Picker("Show", selection: $m.subtitleMode) { ForEach(SubtitleMode.allCases, id: \.self) { Text($0.label).tag($0) } }
+                    .pickerStyle(.segmented)
+                Picker("Write notes in", selection: $m.notesInMine) {
+                    Text("My language").tag(true); Text("The meeting's own language").tag(false)
+                }
             }
             LanguagePackSection(model: packs, settings: m)
-            Section("Interpreting (hold right ⌥)") {
-                langPicker("I speak", $m.speakLanguage)
-                langPicker("Say it in", $m.interpretTarget)
-            }
         }.formStyle(.grouped)
     }
 
@@ -141,6 +255,7 @@ public struct SettingsView: View {
     var hotkeysTab: some View {
         Form {
             LabeledContent("Toggle subtitles", value: "⌃⌥S"); LabeledContent("Hold to interpret", value: "Right ⌥")
+            LabeledContent("Live transcript panel", value: "⌃⌥L")
             LabeledContent("Open Notes", value: "⌃⌥N"); LabeledContent("Start / stop meeting", value: "⌃⌥R")
             Text("Hotkeys are fixed in v0.1. Customisation is on the roadmap.").font(.caption).foregroundStyle(.secondary)
         }.formStyle(.grouped)
@@ -174,7 +289,6 @@ public struct SettingsView: View {
             Text("Chitter").font(.system(size: 28, design: .serif).weight(.bold))
             Text("Catch every word. Keep what matters.").foregroundStyle(.secondary)
             Text("Version 0.1.0").font(.caption)
-            Text("Uses WhisperKit (MIT). BlackHole (GPL) is downloaded on request, never bundled.").font(.caption).foregroundStyle(.secondary)
         }.frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 

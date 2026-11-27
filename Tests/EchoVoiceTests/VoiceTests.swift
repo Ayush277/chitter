@@ -47,3 +47,13 @@ import AVFoundation
     let all = AVSpeechSynthesisVoice.speechVoices().filter { $0.language == "en-US" }
     if let v, let top = all.map(\.quality.rawValue).max() { #expect(v.quality.rawValue >= top || !v.language.hasPrefix("en")) }
 }
+@Test func recorderNeverRecordsFromTheLoopbackDriver() {
+    let devs = [AudioDevice(id: 1, name: "BlackHole 2ch", hasInput: true, hasOutput: true),
+                AudioDevice(id: 2, name: "MacBook Pro Microphone", hasInput: true, hasOutput: false),
+                AudioDevice(id: 3, name: "USB Mic", hasInput: true, hasOutput: false)]
+    let uid: (AudioDeviceID) -> String = { "uid\($0)" }
+    #expect(AudioDevices.recordingDevice(preferredUID: "uid3", devices: devs, uidOf: uid, systemDefault: 2) == 3)
+    #expect(AudioDevices.recordingDevice(preferredUID: "", devices: devs, uidOf: uid, systemDefault: 2) == nil)   // default is fine
+    #expect(AudioDevices.recordingDevice(preferredUID: "", devices: devs, uidOf: uid, systemDefault: 1) == 2)
+    #expect(AudioDevices.recordingDevice(preferredUID: "gone", devices: devs, uidOf: uid, systemDefault: 1) == 2)
+}

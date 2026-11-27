@@ -7,7 +7,7 @@ Chitter is two apps that share one idea: **hear the call, understand it on the d
 | | 🍎 Mac app | 🌐 Chrome extension |
 |---|---|---|
 | Language | Swift 6 | JavaScript (Manifest V3) |
-| Hears the call by | A Core Audio *process tap* on the Mac's sound output | Hooking the page's WebRTC connection and taking each participant's audio track |
+| Hears the call by | A Core Audio *process tap* on the Mac's sound output | Merging the page's WebRTC audio tracks into one stream, or capturing the tab's audio |
 | Runs on | macOS 14.4+ | Chrome 139+ on Windows, Linux, ChromeOS, Mac |
 | AI | Apple SpeechAnalyzer, WhisperKit, Apple Translation, Apple on-device language model | Chrome built-in speech, translator, language detector, `LanguageModel` |
 
@@ -114,7 +114,7 @@ graph TD
 ```mermaid
 flowchart LR
     subgraph Page[Meeting page - MAIN world]
-        H[Wrapped RTCPeerConnection] -->|remote audio track| PL[Pipeline per participant]
+        H[Wrapped RTCPeerConnection] -->|remote audio tracks, merged| PL[One pipeline for the call]
         G[getUserMedia hook] -->|your mic track| PL
         PL --> SR[SpeechRecognition on the track]
         SR --> TR[Translator] --> OV[Shadow-DOM overlay]
@@ -172,6 +172,6 @@ See [`../DECISIONS.md`](../DECISIONS.md) for every judgement call.
 
 ## 9. Known limits
 
-- Real call capture on the Mac app and the extension on a live call are not yet verified (see [`PROGRESS.md`](PROGRESS.md)).
+- Live system audio has been verified on the Mac app; a real call and the extension in a real browser install have not (see [`PROGRESS.md`](PROGRESS.md)).
 - Chrome cannot play audio *into* a call from an extension, so "interpret my voice" is Mac-only.
 - The voice-over plays on your speakers only; the original audio keeps playing.

@@ -68,11 +68,25 @@
     if (!md.includes('Do it _(L3)_') || !md.includes('**Maria**') || !md.includes('> Hello')) throw new Error(md);
   });
 
+  await test('speech errors are explained; routine ones stay quiet', () => {
+    if (!/Mac/.test(C.speechErrorMessage('network'))) throw new Error('network message should point to the Mac app');
+    eq(C.speechErrorMessage('no-speech'), null); eq(C.speechErrorMessage('aborted'), null);
+  });
+  await test('conflict guard trips only on repeated aborts in a short time', () => {
+    const g = new C.ConflictGuard(3, 10000);
+    eq([g.aborted(0), g.aborted(20000), g.aborted(40000)], [false, false, false]);
+    eq([g.aborted(41000), g.aborted(42000)], [false, true]);
+  });
+  await test('silence watch warns once when audio gives no text', () => {
+    const w = new C.SilenceWatch(3); w.audio(2); eq(w.shouldWarn(), false); w.audio(1);
+    eq(w.shouldWarn(), true); eq(w.shouldWarn(), false); w.result(); w.audio(2); eq(w.shouldWarn(), false);
+  });
+
   const text = async f => (await fetch(f, { cache: 'no-store' })).text();
   await test('manifest is MV3 with minimal permissions and MAIN-world page script', async () => {
     const m = JSON.parse(await text('../manifest.json'));
     eq(m.manifest_version, 3);
-    eq(m.permissions.slice().sort(), ['scripting', 'storage'], 'permissions');
+    eq(m.permissions.slice().sort(), ['activeTab', 'scripting', 'storage', 'tabCapture'], 'permissions');
     if (m.host_permissions) throw new Error('no always-on host permissions expected');
     eq(m.optional_host_permissions, ['<all_urls>']);
     const main = m.content_scripts.find(c => c.world === 'MAIN');

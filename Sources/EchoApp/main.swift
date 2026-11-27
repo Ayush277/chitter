@@ -42,6 +42,10 @@ if CommandLine.arguments.contains("--translate-bench") {
     exit(await CLI.translateBench())
 }
 
+if CommandLine.arguments.contains("--live-test") {
+    exit(await CLI.liveTest(CommandLine.arguments))
+}
+
 let app = NSApplication.shared
 let delegate = AppDelegate()
 app.delegate = delegate

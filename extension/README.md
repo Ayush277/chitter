@@ -2,8 +2,12 @@
 
 Live subtitles, an English (or any language) voice-over of foreign speech, and meeting notes for calls in your browser. It works on Windows, Linux, ChromeOS and Mac, because it uses only Chrome's own on-device AI. **Nothing is sent anywhere by this extension** (a test checks the source for network APIs).
 
+> **On a Mac, use the Mac app instead.** It hears whatever the Mac plays, in any browser or call app. This extension is for Windows, Linux and ChromeOS.
+
 ## How it works
-Instead of recording the screen or tab, Chitter wraps the page's `RTCPeerConnection`. When a call connects, each remote participant's audio track is handed to Chrome's on-device speech recognition. So it **starts by itself** (no click per meeting), and each participant is a separate speaker.
+- **Automatic:** Chitter wraps the page's `RTCPeerConnection`. All remote audio tracks are merged into one stream for one on-device recogniser, so it starts without a click.
+- **Caption this tab:** the popup button captures whatever the tab plays (`tabCapture`). Use it where captions don't start by themselves, such as Zoom in the browser, webinars or videos.
+- Recognition errors, and audio that produces no text, are shown on screen.
 
 | Step | API (all on-device) |
 |---|---|
@@ -24,11 +28,13 @@ Supported sites out of the box: Google Meet, Microsoft Teams, Zoom (web client),
 Needs Chrome 139+ (on-device `SpeechRecognition` that accepts an audio track).
 
 ## Honest status
-- `core.js` (committer, voice queue, language probe, voice picker, notes parsing) has 9 browser tests (`test/test.html`) plus manifest and no-network checks.
-- The page script has **never been run in a real call**. Chrome's on-device speech API taking a `MediaStreamTrack`, model download prompts, and each site's use of `RTCPeerConnection` are untested here. Expect to fix site-specific issues.
+- 16 browser checks pass (`test/test.html`), and a two-participant WebRTC loopback (`test/smoke.html`) produces one recogniser with audible merged audio.
+- **Not verified in a real browser install:** tab capture, speech recognition from a call's audio, model downloads and each site's behaviour. Expect to fix site-specific issues. Comet 157 lists the on-device speech and translation models as downloadable, but downloading them there has not been tried.
+- All other people share one speaker label.
 - Chrome's speech recognition needs the language chosen up front; Chitter auto-switches when recognition confidence stays low or the text clearly is another language, which can take a few seconds.
 - The voice-over plays on your speakers only; the original audio keeps playing.
 - Chrome has no API to speak *into* a call, so there is no "interpret my voice" here (the Mac app has it).
-- Some sites run calls in a Worker or use insertable streams; those won't be seen by the hook.
+- Some sites don't deliver call audio as WebRTC tracks; use **Caption this tab** there.
+- Desktop call apps (Zoom, Teams) are outside the browser, so no extension can hear them.
 
 Test page: `python3 -m http.server` in this folder, then open `/test/test.html` (title becomes `ALL PASSED`).

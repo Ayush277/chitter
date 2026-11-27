@@ -51,9 +51,10 @@ Chitter does four things:
 |---|---|
 | Speech recognition, language detection, translation, notes, voice synthesis on real audio | ✅ Run for real on test audio (word error rate 2.6% on English; Chinese, Japanese, French, Spanish to English voice) |
 | Call detection, phrase committer, voice queue, notes validation, search, export, storage | ✅ Unit-tested |
-| Chrome extension logic and a WebRTC loopback call | ✅ 13 browser checks plus a smoke test |
-| Live capture of a real call (Mac app), auto-start on a real call, the interpreter's microphone path | ⚠️ Built, **not yet verified** |
-| Chrome extension in a real Meet call after the latest fix | ⚠️ **Not yet verified** |
+| Chrome extension logic and a WebRTC loopback call | ✅ 16 browser checks plus a smoke test |
+| Live system audio through the whole Mac app | ✅ Verified 2026-11-27 with speech played on the Mac |
+| A real call, auto-start in a real call, the interpreter's microphone path | ⚠️ Built, **not yet verified** |
+| Chrome extension loaded in a real browser | ⚠️ **Not yet verified** |
 
 Full per-phase results, including failures: [`PROGRESS.md`](PROGRESS.md).
 

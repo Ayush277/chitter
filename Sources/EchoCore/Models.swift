@@ -11,11 +11,13 @@ public struct Segment: Codable, Identifiable, Equatable, Sendable {
     public var speaker: Int
     public var isFinal: Bool
     public var confidence: Float?
+    /// true when this is the user's own speech that Chitter translated and spoke into the call.
+    public var interpreted: Bool?
 
     public init(id: Int, start: TimeInterval, end: TimeInterval, text: String, translation: String? = nil,
-                language: String? = nil, speaker: Int = 0, isFinal: Bool = true, confidence: Float? = nil) {
+                language: String? = nil, speaker: Int = 0, isFinal: Bool = true, confidence: Float? = nil, interpreted: Bool? = nil) {
         self.id = id; self.start = start; self.end = end; self.text = text; self.translation = translation
-        self.language = language; self.speaker = speaker; self.isFinal = isFinal; self.confidence = confidence
+        self.language = language; self.speaker = speaker; self.isFinal = isFinal; self.confidence = confidence; self.interpreted = interpreted
     }
 }
 

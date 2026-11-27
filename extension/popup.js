@@ -9,6 +9,17 @@
   const save = () => chrome.storage.local.set({ [KEY]: Object.assign({}, saved, {
     enabled: $('enabled').checked, dub: $('dub').checked, captionMe: $('captionMe').checked, target: $('target').value, sourceLang: $('sourceLang').value, allowCloudSpeech: $('cloud').checked }) });
   ['enabled', 'captionMe', 'dub', 'target', 'sourceLang', 'cloud'].forEach(id => $(id).addEventListener('change', save));
+  $('tabaudio').addEventListener('click', async () => {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      const target = { tabId: tab.id };
+      await chrome.scripting.executeScript({ target, files: ['core.js', 'page.js'], world: 'MAIN' });      // no-op if already there
+      await chrome.scripting.executeScript({ target, files: ['bridge.js'] });
+      const streamId = await chrome.tabCapture.getMediaStreamId({ targetTabId: tab.id, consumerTabId: tab.id });
+      await chrome.tabs.sendMessage(tab.id, { type: 'tab-audio', streamId }, { frameId: 0 });
+      $('msg').textContent = 'Captioning this tab. Subtitles appear at the bottom of the page.';
+    } catch (e) { $('msg').textContent = 'Couldn\'t caption this tab: ' + e.message; }
+  });
   $('allsites').addEventListener('click', async () => {
     try {
       const ok = await chrome.permissions.request({ origins: ['<all_urls>'] });

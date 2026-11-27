@@ -90,7 +90,7 @@
 <div class="card" style="overflow-x:auto"><table><caption class="sr">Technology and where it is used</caption><thead><tr><th>Part</th><th>Technology</th><th>Used for</th></tr></thead><tbody>
 <tr><td>Mac app</td><td>Swift 6, SwiftUI, AppKit</td><td>Menu bar, ribbon, notes window, settings</td></tr>
 <tr><td>Hearing calls</td><td>Core Audio, AVFoundation</td><td>Listens to the Mac's sound; detects which app is in a call</td></tr>
-<tr><td>Extension</td><td>JavaScript, Manifest V3, WebRTC</td><td>Takes each participant's audio in the browser</td></tr>
+<tr><td>Extension</td><td>JavaScript, Manifest V3, WebRTC</td><td>Hears the call, or any tab, in the browser</td></tr>
 <tr><td>Storage</td><td>Plain files, SQLite search</td><td>Meetings you own; misspelling-tolerant search</td></tr>
 <tr><td>Website</td><td>HTML, CSS, JavaScript</td><td>This page, about 20 KB, no framework</td></tr></tbody></table></div>
 <h3 style="margin-top:28px"><img src="img/ai.svg" width="36" height="36" alt="" style="vertical-align:middle"> Where AI is used</h3>
@@ -146,7 +146,7 @@
 <details><summary>What leaves my Mac?</summary><p>By default, nothing about your meetings. If you add a cloud API key, transcript text (never audio) goes to that provider, and the Privacy Ledger lists each request.</p></details>
 <details><summary>Is it really free?</summary><p>Yes. Speech, translation and notes use on-device tools. Optional cloud providers are bring-your-own-key; free tiers may rate-limit and Chitter then falls back to the next engine.</p></details>
 <details><summary>How is it different from other meeting-AI tools?</summary><p>No bot joins, nothing leaves your device by default, notes cite the transcript line they came from, foreign speech is spoken aloud in your language, and meetings are plain files you can open in Obsidian. A Privacy Ledger lists every network request.</p></details>
-<details><summary>What doesn't it do yet?</summary><p>No voice cloning, no speaker names, no cloud sync, and no native Windows app (the Chrome extension covers browser calls on Windows). Real-call testing of the capture and the extension is still in progress. Everything unverified is listed in the repository's progress log.</p></details>
+<details><summary>What doesn't it do yet?</summary><p>No paid voice cloning (the Mac app can use your macOS Personal Voice, which hasn't been tested yet), no speaker names, no cloud sync, and no native Windows app (the Chrome extension covers browser calls on Windows). The Mac app's live subtitles work on audio the Mac plays; testing in real calls, and of the extension, is still in progress. Everything unverified is listed in the repository's progress log.</p></details>
 </section>
 </main>
 <footer><hr class="stitch" style="margin-top:0"><p>Chitter · built by <a href="https://github.com/Ayush277">Ayush Kumar</a></p></footer>

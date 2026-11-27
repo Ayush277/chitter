@@ -75,6 +75,36 @@
     lock(lang) { const j = this.candidates.indexOf(lang); if (j >= 0) this.i = j; this.recent = []; this.tried = new Set([this.current]); }
   }
 
+  /** Plain words for the speech recogniser's error codes. null = routine, nothing to tell the user. */
+  function speechErrorMessage(code) {
+    const m = {
+      'network': 'This browser\'s speech service failed (network error). Browsers other than Google Chrome may not be able to run it. On a Mac, use the Chitter app instead: it works with any browser or call app.',
+      'service-not-allowed': 'This browser doesn\'t allow speech recognition here. On a Mac, use the Chitter app instead.',
+      'not-allowed': 'Speech recognition was blocked for this page.',
+      'audio-capture': 'Speech recognition couldn\'t read the audio.',
+      'language-not-supported': 'No on-device speech model is available for this language.',
+    };
+    return m[code] || null;
+  }
+
+  /** Some browsers allow only one speech recogniser at a time: a second one keeps aborting the first. */
+  class ConflictGuard {
+    constructor(limit = 3, windowMs = 10000) { this.limit = limit; this.windowMs = windowMs; this.times = []; }
+    aborted(now = Date.now()) {
+      this.times.push(now); this.times = this.times.filter(t => now - t <= this.windowMs);
+      if (this.times.length < this.limit) return false;
+      this.times = []; return true;
+    }
+  }
+
+  /** Audio is playing but no text ever comes back: say so, once, instead of staying silently blank. */
+  class SilenceWatch {
+    constructor(seconds = 15) { this.seconds = seconds; this.heard = 0; this.warned = false; }
+    audio(duration) { this.heard += duration; }
+    result() { this.heard = 0; this.warned = false; }
+    shouldWarn() { if (this.warned || this.heard < this.seconds) return false; this.warned = true; return true; }
+  }
+
   const LANG_NAMES = { en: 'English', es: 'Spanish', fr: 'French', de: 'German', it: 'Italian', pt: 'Portuguese', zh: 'Chinese', ja: 'Japanese', ko: 'Korean', ru: 'Russian', hi: 'Hindi', ar: 'Arabic', tr: 'Turkish', nl: 'Dutch', pl: 'Polish' };
   const BCP47 = { en: 'en-US', es: 'es-ES', fr: 'fr-FR', de: 'de-DE', it: 'it-IT', pt: 'pt-BR', zh: 'zh-CN', ja: 'ja-JP', ko: 'ko-KR', ru: 'ru-RU', hi: 'hi-IN', ar: 'ar-SA', tr: 'tr-TR', nl: 'nl-NL', pl: 'pl-PL' };
   const baseLang = l => String(l || '').toLowerCase().split(/[-_]/)[0];
@@ -138,5 +168,5 @@
     return s;
   }
 
-  root.ChitterCore = { PhraseCommitter, DubScheduler, LangProbe, pickVoice, isCallHost, extractiveNotes, parseNotes, notesMarkdown, baseLang, LANG_NAMES, BCP47 };
+  root.ChitterCore = { speechErrorMessage, ConflictGuard, SilenceWatch, PhraseCommitter, DubScheduler, LangProbe, pickVoice, isCallHost, extractiveNotes, parseNotes, notesMarkdown, baseLang, LANG_NAMES, BCP47 };
 })(typeof globalThis !== 'undefined' ? globalThis : window);

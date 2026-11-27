@@ -40,5 +40,22 @@ extension Prefs {
     }
 }
 
+extension Prefs {
+    public static var subtitleMode: SubtitleMode {
+        get { SubtitleMode(rawValue: d.string(forKey: "subtitleMode") ?? "") ?? .both }
+        set { d.set(newValue.rawValue, forKey: "subtitleMode") }
+    }
+    /// Write notes in my language (from the translations) instead of the meeting's own language.
+    public static var notesInMyLanguage: Bool { get { d.object(forKey: "notesInMyLanguage") as? Bool ?? true } set { d.set(newValue, forKey: "notesInMyLanguage") } }
+    public static var wordListText: String { get { d.string(forKey: "wordList") ?? "" } set { d.set(newValue, forKey: "wordList") } }
+    public static var wordList: WordList { WordList(wordListText) }
+    /// Interpret without holding a key: each sentence is sent after a short pause.
+    public static var handsFree: Bool { get { d.bool(forKey: "handsFree") } set { d.set(newValue, forKey: "handsFree") } }
+    /// While speaking a translation into the call, make BlackHole the system microphone, then switch back.
+    public static var switchSystemMic: Bool { get { d.object(forKey: "switchSystemMic") as? Bool ?? true } set { d.set(newValue, forKey: "switchSystemMic") } }
+    /// Core Audio UID of the microphone Chitter listens through ("" = system default).
+    public static var micDeviceUID: String { get { d.string(forKey: "micDeviceUID") ?? "" } set { d.set(newValue, forKey: "micDeviceUID") } }
+}
+
 /// Localised string lookup. Keys are the English text (same convention as Localizable.xcstrings).
 public func L(_ key: String) -> String { NSLocalizedString(key, bundle: .main, value: key, comment: "") }

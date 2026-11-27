@@ -47,8 +47,8 @@ Everything Chitter uses, what it does there, and where to find it in the repo.
 
 | Technology | Used for | Where |
 |---|---|---|
-| **Manifest V3** | Extension packaging and permissions (only `storage`, `scripting`) | `extension/manifest.json` |
-| **WebRTC hook** | Reading each participant's audio track | `extension/page.js` |
+| **Manifest V3** | Extension packaging and permissions (`storage`, `scripting`, `tabCapture`, `activeTab`) | `extension/manifest.json` |
+| **WebRTC hook + Web Audio mixer + `tabCapture`** | Hearing the call, or any tab | `extension/page.js` |
 | **Shadow DOM** | An overlay the meeting site's CSS cannot break | `extension/page.js` |
 | **Web Audio / MediaStream** | Passing tracks to recognition | `extension/page.js` |
 

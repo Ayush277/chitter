@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import EchoCore
 
 /// What the ribbon is showing right now.
 @MainActor
@@ -10,6 +11,7 @@ public final class RibbonModel: ObservableObject {
     @Published public var isFinal = false
     @Published public var visible = false
     @Published public var accessibilityMode = false
+    @Published public var mode: SubtitleMode = .both
     @Published public var hovering = false
     private var hideTask: Task<Void, Never>?
     public var fadeAfter: TimeInterval = 3
@@ -36,6 +38,7 @@ struct RibbonView: View {
     var body: some View {
         let big = model.accessibilityMode
         let thread = Tokens.thread(model.speaker)
+        let shown = model.mode.visible(original: model.original, translation: model.translation)
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(Tokens.speakerInitial(model.speaker))
@@ -44,13 +47,15 @@ struct RibbonView: View {
                     .frame(width: big ? 28 : 18, height: big ? 28 : 18)
                     .background(Circle().fill(thread.color))
                     .accessibilityHidden(true)
-                Text(model.original)
-                    .font(.system(size: big ? 28 : 15))
-                    .foregroundStyle(Tokens.textLight.color.opacity(0.7))
-                    .lineLimit(2)
+                if let original = shown.original {
+                    Text(original)
+                        .font(.system(size: big ? 28 : 15))
+                        .foregroundStyle(Tokens.textLight.color.opacity(0.7))
+                        .lineLimit(2)
+                }
             }
-            if !model.translation.isEmpty {
-                Text(model.translation)
+            if let translation = shown.translation {
+                Text(translation)
                     .font(.system(size: big ? 34 : 20, weight: .medium, design: .serif))
                     .foregroundStyle(Tokens.textLight.color)
                     .lineLimit(3)
@@ -67,7 +72,7 @@ struct RibbonView: View {
         .opacity(model.visible ? (model.hovering ? 0.15 : 1) : 0)
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: model.visible)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Live subtitle: \(model.original). \(model.translation)")
+        .accessibilityLabel("Live subtitle: \(shown.original ?? ""). \(shown.translation ?? "")")
     }
 }
 

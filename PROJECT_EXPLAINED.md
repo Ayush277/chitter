@@ -201,18 +201,18 @@ Audio capture, call detection, voice-activity detection, search, storage, export
 ### 8.1 Size of the project (counted from the repo)
 | Metric | Value |
 |---|---|
-| Application code | **3,928 lines** in **47 files**, **9 modules** |
-| Automated Swift tests | **432 lines**, **48 tests** |
-| Browser extension (code + tests) | **651 lines** of JavaScript, **13 browser checks** + a WebRTC smoke test |
+| Application code | **4,564 lines** in **50 files**, **9 modules** |
+| Automated Swift tests | **505 lines**, **58 tests** |
+| Browser extension (code + tests) | **797 lines** of JavaScript, **16 browser checks** + a WebRTC smoke test |
 | Website | **274 lines** (HTML, CSS, JS), about **25 KB**, no framework |
 | Documentation | **739+ lines** of Markdown |
 | Interface strings | **97** in a localisation catalog (English complete; 4 more languages scaffolded for review) |
 | Scripts | **10** (build, test, package, benchmark, fixtures, release) |
 | Languages used | **5** (Swift, JavaScript, Python, Shell, SQL) plus HTML/CSS |
-| Commits | **19** |
-| Logged design decisions | **18** in `DECISIONS.md` |
+| Commits | **21** |
+| Logged design decisions | **22** in `DECISIONS.md` |
 
-Lines per module: `EchoUI` 1,025 · `EchoApp` 883 · `EchoCore` 503 · `EchoAudio` 352 · `EchoASR` 283 · `EchoNotes` 281 · `EchoVoice` 276 · `EchoNet` 191 · `EchoLang` 134.
+Lines per module: `EchoUI` 1,240 · `EchoApp` 1,100 · `EchoCore` 606 · `EchoAudio` 388 · `EchoVoice` 334 · `EchoASR` 283 · `EchoNotes` 281 · `EchoNet` 191 · `EchoLang` 141.
 
 ### 8.2 Performance (one Mac: Apple silicon, macOS 27.0.1)
 | Metric | Result | Note |
@@ -234,7 +234,8 @@ Lines per module: `EchoUI` 1,025 · `EchoApp` 883 · `EchoCore` 503 · `EchoAudi
 | Meeting data sent off the device (default) | **0 bytes** |
 | Accounts, analytics, servers | **None** |
 | Third-party libraries in the app | **1** |
-| Browser extension permissions | **2** (`storage`, `scripting`) |
+| Browser extension permissions | **4** (`storage`, `scripting`, `tabCapture`, `activeTab`) |
+| Live audio → translated subtitle (2026-11-27) | translation **2.0–3.4 s** after each recognised line (German, Chinese, French) |
 
 ---
 
@@ -243,7 +244,7 @@ Lines per module: `EchoUI` 1,025 · `EchoApp` 883 · `EchoCore` 503 · `EchoAudi
 **Engineering**
 - Designed and built a **two-client system** (desktop app and browser extension) from one architecture, plus a website, packaging scripts and demo videos.
 - Reached **measured results on real audio**: 2.6% word error rate, a 30-minute soak test with no crash, and four languages translated to a spoken English voice.
-- Wrote **48 unit tests and 13 browser checks**, including tests that enforce *design rules*: "no code outside one module may use the network" and "no extension file may make a network request".
+- Wrote **58 unit tests and 16 browser checks**, including tests that enforce *design rules*: "no code outside one module may use the network" and "no extension file may make a network request".
 - **Diagnosed and fixed a production-style failure**: the extension crashed on Google Meet because Meet enforces a security policy (Trusted Types). I reproduced it in a test with the same policy, fixed it, and added a regression test.
 - **Cut latency with measurement**: profiled the translation stage, found a ~6 s first-call cost, and added warm-up, early speaking and prefetching.
 - Replaced flaky retries with a **root-cause fix** for an unreliable test-plugin problem on a minimal toolchain.
@@ -320,6 +321,8 @@ Open source on GitHub, Homebrew, a Chrome Web Store listing, demo videos, and po
 | 2026-11-25 | **Browser extension.** On-device subtitles, voice-over and notes for Windows, Linux, ChromeOS and Mac |
 | 2026-11-25 | **First real-use bug fixed.** Extension crashed on Google Meet (Trusted Types); reproduced in a test, fixed, regression-tested. Added "caption my own voice" |
 | 2026-11-25 | **Videos, documentation and public release** on GitHub |
+| 2026-11-27 | **Live capture fixed.** A mistyped Core Audio key meant the desktop app had received no audio; after the fix, live subtitles and notes worked on audio played on the Mac |
+| 2026-11-27 | **Meeting features.** Hands-free interpreting, interpreted lines in the transcript, display modes, live panel, voice and mic pickers, word list, notes language; extension rebuilt around one recogniser plus tab capture |
 
 **Next:** verify real-call capture on more machines, faster voice-over with installed translation packs, a Chrome Web Store release and a Windows client. See [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
@@ -335,10 +338,16 @@ Open source on GitHub, Homebrew, a Chrome Web Store listing, demo videos, and po
 |---|---|
 | **S: Situation** | Calls mix languages, many have no captions, and the AI tools that fix this usually put a bot in the meeting or send private conversations to the cloud |
 | **T: Task** | Design and build a system that gives live subtitles, spoken translation and trustworthy notes **entirely on the user's device**, for desktop and for browsers on other operating systems |
-| **A: Action** | Designed a modular architecture (9 modules, one-way dependencies) around a streaming pipeline: capture → recognise → translate → speak → persist. Put each AI capability behind an interface and built **fallback chains** (strategy pattern) so a missing model or service degrades gracefully. Added a **validation layer** that rejects AI notes citing non-existent sources. Enforced privacy through a **single network gateway**, a user-visible ledger and a test that fails the build if other code touches the network. Handled real-time constraints with bounded queues, backpressure and prefetching. Wrote 48 unit tests and 13 browser checks, benchmarked accuracy and latency, and ran a 30-minute soak test |
+| **A: Action** | Designed a modular architecture (9 modules, one-way dependencies) around a streaming pipeline: capture → recognise → translate → speak → persist. Put each AI capability behind an interface and built **fallback chains** (strategy pattern) so a missing model or service degrades gracefully. Added a **validation layer** that rejects AI notes citing non-existent sources. Enforced privacy through a **single network gateway**, a user-visible ledger and a test that fails the build if other code touches the network. Handled real-time constraints with bounded queues, backpressure and prefetching. Wrote 58 unit tests and 16 browser checks, benchmarked accuracy and latency, and ran a 30-minute soak test |
 | **R: Result** | 2.6% word error rate; four languages detected, translated and spoken in English in 3.8–6.2 s; 30-minute soak with no crash; 9.8 MB app; $0 running cost and 0 bytes of meeting data sent by default; shipped as a documented public repository with a website and demo videos |
 
 ### 12.2 Smaller STAR stories
+
+**The silent audio bug**
+- **S:** The desktop app showed no subtitles on live audio, although every unit test passed and I had assumed a missing OS permission.
+- **T:** Find out why capture returned nothing.
+- **A:** Added a headless capture test that reports seconds captured and peak level, ran it as the app itself so the permission applied, got 0 samples, then checked each setting against the SDK header. The tap list used the key `"uuid"`; the real key is `"uid"`, and the OS silently ignored the wrong one. Switched to the SDK constants and added a regression test.
+- **R:** From 0 s to 14.5 s of audio captured; German, Chinese and French then flowed through to translated subtitles. **Lesson:** test the real device path early, and check an assumed cause before accepting it.
 
 **Debugging a real-world failure**
 - **S:** The browser extension passed all tests but did nothing on a real Google Meet call.
@@ -375,7 +384,7 @@ Open source on GitHub, Homebrew, a Chrome Web Store listing, demo videos, and po
 - Applied **fault-tolerant design**: strategy-pattern provider chains with cool-downs, caching and exponential back-off so every AI step degrades to deterministic code when a model or service is unavailable.
 - Built a **validation layer for AI output**: notes must cite transcript line IDs and the system rejects invalid citations, plus a UI that draws each note to its source.
 - Enforced **security and privacy by construction**: a single audited network gateway, a user-visible request ledger, Keychain storage, checksum-pinned installer and least-privilege permissions, backed by tests that fail the build on violations.
-- Verified quality with **48 unit tests, 13 browser checks, a WebRTC loopback test and a 30-minute soak test** (584 sentences, no crash); recorded 2.6% word error rate and documented the targets not yet met.
+- Verified quality with **58 unit tests, 16 browser checks, a WebRTC loopback test and a 30-minute soak test** (584 sentences, no crash); recorded 2.6% word error rate and documented the targets not yet met.
 - Root-caused and fixed a **production-style failure** (browser security policy blocking the extension on Google Meet) by reproducing it in a test and adding a regression guard.
 
 **Skills line**
@@ -397,12 +406,13 @@ Open source on GitHub, Homebrew, a Chrome Web Store listing, demo videos, and po
 |---|---|
 | Speech, language ID, translation, notes and voice on real test audio | ✅ **Run for real** with measured results |
 | Search, storage, export, call-detection logic, queueing, notes validation, checksum, contrast | ✅ **Unit-tested** |
-| Browser extension logic and a WebRTC loopback call (with Meet's security policy) | ✅ **Tested** (13 checks + smoke test) |
-| Live capture of a **real call** on the desktop app | ⚠️ **Built, not verified** (needs OS permissions granted by hand) |
+| Browser extension logic and a WebRTC loopback call (with Meet's security policy) | ✅ **Tested** (16 checks + smoke test) |
+| Live **system audio** through the whole desktop app (speech played on the Mac) | ✅ **Verified** 2026-11-27 |
+| A **real call** with another person on the desktop app | ⚠️ **Not yet verified** |
 | Auto-start during a **real call** | ⚠️ Detection ran against the live system and is unit-tested; **not seen in a real call** |
-| Browser extension in a **real Meet call** after the latest fix | ⚠️ **Not yet verified** |
-| Microphone → virtual-microphone interpreter | ⚠️ **Built, not run end to end** |
-| How the desktop app's windows look on screen | ⚠️ Never screenshotted in this environment |
+| Browser extension **loaded in a real browser** (call audio, tab capture, model download) | ⚠️ **Not yet verified** |
+| Microphone → virtual-microphone interpreter (hold-to-talk and hands-free) | ⚠️ **Built, not run with a real microphone** |
+| New settings screens and live panel | ✅ Rendered from the app and checked |
 | Targets: first subtitle 1.5 s; interpreter 4 s | ❌ **Not met** (measured 2.0–4.1 s and 3.8–6.2 s) |
 
 **Other limits**
@@ -442,7 +452,7 @@ I don't trust it by default. Notes must be JSON citing transcript line IDs; a va
 Gracefully. A missing model or rate-limited provider is skipped and put on a cool-down; if every AI option fails, a rule-based extractor still produces notes. A crash mid-write loses at most one partial line because transcripts are append-only.
 
 **"What didn't work?"**
-The 1.5 s first-subtitle target was missed (2.0 s with Whisper, 4.1 s with Apple's engine, which delivers results in bursts). Language detection misheard Spanish as Latin; I added a safeguard that re-checks likely languages. Real-call capture is still unverified because it needs permissions I could only grant by hand.
+The 1.5 s first-subtitle target was missed (2.0 s with Whisper, 4.1 s with Apple's engine, which delivers results in bursts). Language detection misheard Spanish as Latin; I added a safeguard that re-checks likely languages. My biggest miss: the desktop app captured no audio at first because of one mistyped OS key, and I blamed permissions until I tested the device path directly. A real call with another person is still unverified.
 
 **"How would you scale it or take it cross-platform?"**
 The capture layer is the only platform-specific part. I already built a browser version that covers Windows and Linux for web calls. A Windows client would need loopback audio capture and a Windows speech stack, reusing the notes logic, validation rules and file format.

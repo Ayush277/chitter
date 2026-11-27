@@ -16,7 +16,10 @@ final class SessionController: ObservableObject {
     lazy var ribbon = RibbonPanel(model: ribbonModel)
     @Published var isListening = false
     @Published var status = "Idle"
-    @Published var lines: [Segment] = []
+    @Published var lines: [Segment] = [] { didSet { livePanel.model.lines = lines } }
+    let livePanel = LiveTranscriptPanel()
+    private var echo = EchoFilter()
+    private let micGate = Gate()          // closed while the interpreter is using your microphone
 
     private let tap = SystemAudioTap()
     let translators = TranslatorChain([])
@@ -44,7 +47,7 @@ final class SessionController: ObservableObject {
     private var forcedLanguage: String?
     lazy var notesVM = NotesViewModel(store: store, index: index,
         engineLabel: { [notesEngine] in await notesEngine.activeProviderName() },
-        generate: { [notesEngine] in await notesEngine.generate($0) })
+        generate: { [notesEngine] in await notesEngine.generate(Segment.forNotes($0, inMyLanguage: Prefs.notesInMyLanguage)) })
     lazy var notesWindow = NotesWindowController(vm: notesVM)
 
     var onStateChange: (() -> Void)?
@@ -65,6 +68,9 @@ final class SessionController: ObservableObject {
         let engine = auto ? ASRFactory.makeMultilingual() : ASRFactory.make(preferWhisper: Prefs.preferWhisper)
         self.engine = engine
         ribbonModel.accessibilityMode = Prefs.accessibilityMode
+        ribbonModel.mode = Prefs.subtitleMode
+        echo = EchoFilter()
+        wireInterpreter()
         started = Date(); lines = []; lastSpeech = Date()
         meeting = try? store.create(title: title, sourceLanguage: Prefs.sourceLanguage == "auto" ? nil : Prefs.sourceLanguage,
                                     targetLanguage: Prefs.targetLanguage)
@@ -126,7 +132,7 @@ final class SessionController: ObservableObject {
     func writeNotes() async {
         guard let m = meeting, lines.count > notesLineCount || !lines.isEmpty else { return }
         notesLineCount = lines.count
-        let r = await notesEngine.generate(lines)
+        let r = await notesEngine.generate(Segment.forNotes(lines, inMyLanguage: Prefs.notesInMyLanguage))
         if let data = try? JSONEncoder().encode(r.notes) { m.saveNotes(json: data, markdown: NotesValidator.markdown(r.notes)) }
     }
 
@@ -142,10 +148,10 @@ final class SessionController: ObservableObject {
     private func configureTranslators() async {
         var chain: [Translator] = []
         #if compiler(>=6.2)
-        if #available(macOS 26, *) { chain.append(AppleTranslator()); chain.append(AppleModelTranslator()); Task.detached { await AppleModelTranslator.warmUp() } }
+        if #available(macOS 26, *) { chain.append(AppleTranslator()); chain.append(AppleModelTranslator(keepTerms: Prefs.wordList.terms)); Task.detached { await AppleModelTranslator.warmUp() } }
         #endif
         if await OpenAIClient.isReachable(.ollama) {
-            chain.append(LLMTranslator(endpoint: .ollama, apiKey: { nil }))
+            chain.append(LLMTranslator(endpoint: .ollama, apiKey: { nil }, keepTerms: Prefs.wordList.terms))
         }
         await translators.setTranslators(chain)
     }
@@ -156,11 +162,30 @@ final class SessionController: ObservableObject {
         let e = ASRFactory.makeMultilingual(); micEngine = e
         do { try await e.start(locale: Locale.current) } catch { return }
         micConsumer = Task { [weak self] in for await r in e.results { await self?.handle(r, speaker: 1) } }
-        micRecorder.onSamples = { [weak e] s in e?.append(s) }
+        micRecorder.keepSamples = false
+        micRecorder.onSamples = { [weak e, micGate] s in if micGate.isOpen { e?.append(s) } }
         try? micRecorder.start()
     }
 
-    private func handle(_ r: ASRResult, speaker: Int = 0) {
+    /// Lines the interpreter speaks into the call belong in the transcript too, labelled "You · Interpreted".
+    func wireInterpreter() {
+        interpreter.onCapture = { [micGate] capturing in micGate.isOpen = !capturing }
+        interpreter.onInterpreted = { [weak self] said, sent in
+            guard let self, self.isListening else { return }
+            let now = Date().timeIntervalSince(self.started)
+            let seg = Segment(id: self.lines.count + 1, start: now, end: now, text: said, translation: sent,
+                              language: Prefs.speakLanguage, speaker: 1, interpreted: true)
+            self.lines.append(seg); self.meeting?.append(seg)
+            self.lastSpeech = Date()
+        }
+    }
+
+    private func handle(_ result: ASRResult, speaker: Int = 0) {
+        var r = result
+        r.text = Prefs.wordList.apply(to: r.text)
+        if speaker == 0 { echo.noteCallLine(r.text) }
+        else if echo.isEcho(r.text) { return }      // the mic only picked up the call from the speakers
+        ribbonModel.mode = Prefs.subtitleMode
         let id = lines.count + 1
         let lang = r.language ?? detectedLanguage
         ribbonModel.show(original: r.text, translation: nil, speaker: speaker, isFinal: r.isFinal)
@@ -176,7 +201,8 @@ final class SessionController: ObservableObject {
             let phrase = r.isFinal ? committer.finish(final: r.text) : committer.update(partial: r.text)
             if let phrase { speak(phrase, from: lang, to: target) }
         } else if r.isFinal && speaker == 0 { committer = PhraseCommitter() }
-        guard foreign, r.isFinal || Date().timeIntervalSince(lastPartialTranslate) > 1.2 else { return }
+        // "Original only" skips live translation of partial lines; finished lines are still translated for the transcript and notes.
+        guard foreign, r.isFinal || (Prefs.subtitleMode != .original && Date().timeIntervalSince(lastPartialTranslate) > 1.2) else { return }
         if !r.isFinal { lastPartialTranslate = Date() }
         Task { [weak self] in   // on-screen translation of the whole line
             guard let self, let t = await self.translators.translate(r.text, from: lang, to: target) else { return }
@@ -229,4 +255,14 @@ final class SessionController: ObservableObject {
     func callEnded() { if isListening && autoStarted { stop() } }
 
     func toggleRibbon() { ribbon.isPresented ? ribbon.dismiss() : ribbon.present() }
+}
+
+/// A flag the audio thread can read safely.
+final class Gate: @unchecked Sendable {
+    private let lock = NSLock()
+    private var open = true
+    var isOpen: Bool {
+        get { lock.lock(); defer { lock.unlock() }; return open }
+        set { lock.lock(); open = newValue; lock.unlock() }
+    }
 }

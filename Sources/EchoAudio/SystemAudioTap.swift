@@ -34,6 +34,9 @@ public final class SystemAudioTap: @unchecked Sendable {
         return st == noErr && obj != kAudioObjectUnknown ? obj : nil
     }
 
+    /// Uses the SDK's own constants: a mistyped key is silently ignored by Core Audio and yields no audio at all.
+    static func tapList(uuid: String) -> [[String: Any]] { [[kAudioSubTapUIDKey: uuid, kAudioSubTapDriftCompensationKey: true]] }
+
     /// `onSamples` receives 16 kHz mono Float32 chunks on a background queue.
     public func start(onSamples: @escaping @Sendable ([Float]) -> Void) throws {
         guard !isRunning else { return }
@@ -55,10 +58,7 @@ public final class SystemAudioTap: @unchecked Sendable {
             kAudioAggregateDeviceIsPrivateKey: true,
             kAudioAggregateDeviceIsStackedKey: false,
             kAudioAggregateDeviceTapAutoStartKey: true,
-            kAudioAggregateDeviceTapListKey: [[
-                "uuid": desc.uuid.uuidString,
-                "drift": true,
-            ]],
+            kAudioAggregateDeviceTapListKey: Self.tapList(uuid: desc.uuid.uuidString),
         ]
         st = AudioHardwareCreateAggregateDevice(dict as CFDictionary, &aggID)
         guard st == noErr else { cleanup(); throw AudioTapError.osStatus("Creating the aggregate device", st) }

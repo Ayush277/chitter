@@ -15,6 +15,7 @@
   };
   let S = Object.assign({}, defaults);
   window.addEventListener('message', ev => {
+    if (ev.source === window && ev.data && ev.data.__chitter === 'tab-audio' && typeof ev.data.streamId === 'string') { startTabAudio(ev.data.streamId); return; }
     if (ev.source !== window || !ev.data || ev.data.__chitter !== 'settings') return;
     const s = ev.data.settings || {};
     for (const k of Object.keys(defaults)) if (typeof s[k] === typeof defaults[k]) S[k] = s[k];
@@ -161,8 +162,8 @@
 
   // ---------------------------------------------------------------- one pipeline per remote audio track (= per participant)
   class Pipeline {
-    constructor(track, index, isMe) {
-      this.track = track; this.index = index; this.active = true; this.isMe = !!isMe;
+    constructor(key, track, index, isMe) {
+      this.key = key; this.track = track; this.index = index; this.active = true; this.isMe = !!isMe; this.errors = 0;
       this.committer = new C.PhraseCommitter();
       const start = S.sourceLang === 'auto' ? (S.candidates.includes(S.target) ? S.target : S.candidates[0]) : S.sourceLang;
       this.probe = new C.LangProbe(S.candidates.length ? S.candidates : ['en'], start);
@@ -195,14 +196,35 @@
       const r = new SR();
       r.continuous = true; r.interimResults = true; r.lang = C.BCP47[this.lang] || this.lang;
       if ('processLocally' in r) r.processLocally = !S.allowCloudSpeech;
-      r.onresult = e => this.onResult(e);
-      r.onerror = e => { if (e.error === 'language-not-supported') this.nextLang('Language not supported'); else if (e.error === 'not-allowed') ui.toast('Speech recognition was blocked for this page.', 'OK'); };
-      r.onend = () => { if (this.active && this.rec === r) setTimeout(() => this.listen(), 120); };
+      r.onresult = e => { this.errors = 0; if (!this.isMe) watch.result(); this.onResult(e); };
+      r.onerror = e => this.onError(r, e.error);
+      // Restart when Chrome ends a session; back off while it keeps failing.
+      r.onend = () => { if (this.active && this.rec === r) setTimeout(() => { if (this.active && this.rec === r) this.listen(); }, Math.min(8000, 120 * Math.pow(2, this.errors))); };
       this.rec = r;
       try { r.start(this.track.clone()); }   // Chrome ≥ 139 accepts a MediaStreamTrack here
       catch (e) { this.active = false;
         ui.toast('This Chrome version can\'t transcribe a call\'s audio on-device yet (needs SpeechRecognition with audio-track input). Update Chrome.', 'OK'); }
     }
+    onError(rec, code) {
+      if (code === 'no-speech') return;
+      if (code === 'aborted') {
+        if (rec.__chitterAbort || !this.active) return;      // we aborted it ourselves
+        this.errors++;
+        // Two recognisers fighting: keep the call, drop the microphone.
+        if (guard.aborted() && pipelines.has('me') && pipelines.size > 1) {
+          pipelines.get('me').stop();
+          ui.toast('This browser can only transcribe one stream at a time, so Chitter stopped captioning your own voice and kept the call.', 'OK');
+        }
+        return;
+      }
+      this.errors++;
+      console.warn('[Chitter] speech error:', code, 'language', this.lang);
+      if (code === 'language-not-supported') { this.nextLang(); if (this.errors < this.probe.candidates.length) return; }
+      const message = C.speechErrorMessage(code);
+      if (message && this.errors <= 1 + (code === 'language-not-supported' ? this.probe.candidates.length : 0)) ui.toast(message, 'OK');
+      if (this.errors >= 6) { this.stop(); ui.status('Chitter stopped: speech error "' + code + '"', false); }
+    }
+    abort() { if (this.rec) { this.rec.__chitterAbort = true; try { this.rec.abort(); } catch (e) {} } }
     nextLang(why) {
       const n = this.probe.suggest() || this.probe.candidates[(this.probe.candidates.indexOf(this.lang) + 1) % this.probe.candidates.length];
       if (n && n !== this.lang) { this.switchTo(n); }
@@ -210,7 +232,7 @@
     switchTo(lang) {
       if (lang === this.lang) return;
       this.lang = lang; this.probe.lock(lang);
-      try { this.rec && this.rec.abort(); } catch (e) {}      // onend restarts with the new language
+      this.abort();      // onend restarts with the new language
       if (!this.rec) this.begin();
     }
     onResult(e) {
@@ -250,29 +272,91 @@
       const t = await translate(phrase, this.lang, S.target);
       if (t) dub.enqueue(t);
     }
-    stop() { this.active = false; try { this.rec && this.rec.abort(); } catch (e) {} pipelines.delete(this.track.id); refreshStatus(); }
+    stop() { this.active = false; this.abort(); if (pipelines.get(this.key) === this) pipelines.delete(this.key); refreshStatus(); }
   }
 
+  // At most two recognisers: one for what you hear ('call' or 'tab') and one for your own voice ('me').
+  // (A meeting such as Google Meet delivers several remote audio tracks; one recogniser each made them fight.)
   const pipelines = new Map();
+  const guard = new C.ConflictGuard();
+  const watch = new C.SilenceWatch();
   function refreshStatus() {
     if (!pipelines.size) { setTimeout(() => { if (!pipelines.size) ui.hidePill(); }, 5000); return; }
-    ui.status('Chitter · ' + pipelines.size + ' speaker' + (pipelines.size > 1 ? 's' : '') + ' → ' + (C.LANG_NAMES[S.target] || S.target), true);
+    const what = pipelines.has('tab') ? 'this tab' : pipelines.has('call') ? 'the call' : 'your microphone';
+    ui.status('Chitter · ' + what + ' → ' + (C.LANG_NAMES[S.target] || S.target), true);
     toBridge({ type: 'badge', on: true });
   }
+
+  let audio = null;      // { ctx, out (one mixed track), analyser, sources: Map<trackId, node> }
+  function mixer() {
+    if (audio) return audio;
+    const ctx = new AudioContext(), out = ctx.createMediaStreamDestination(), analyser = ctx.createAnalyser();
+    analyser.fftSize = 2048;
+    audio = { ctx, out, analyser, sources: new Map() };
+    const buf = new Float32Array(analyser.fftSize);
+    setInterval(() => {
+      if (!pipelines.has('call') && !pipelines.has('tab')) return;
+      analyser.getFloatTimeDomainData(buf);
+      let sum = 0; for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
+      if (Math.sqrt(sum / buf.length) > 0.01) watch.audio(1);
+      if (watch.shouldWarn()) ui.toast('Chitter can hear this audio, but your browser is returning no text. Check that the on-device speech model is installed. On a Mac, the Chitter app works with any browser.', 'OK');
+    }, 1000);
+    return audio;
+  }
+  function resumeAudio() {
+    const m = mixer();
+    if (m.ctx.state !== 'running') m.ctx.resume().catch(() => {});
+    return m;
+  }
+  addEventListener('pointerdown', () => { if (audio && audio.ctx.state !== 'running') audio.ctx.resume().catch(() => {}); }, true);
+
   function onRemoteAudio(track) {
-    if (!S.enabled || pipelines.has(track.id)) return;
-    pipelines.set(track.id, new Pipeline(track, pipelines.size));
+    if (!S.enabled) return;
+    const m = resumeAudio();
+    if (m.sources.has(track.id)) return;
+    const stream = new MediaStream([track]);
+    // Chromium only feeds a remote WebRTC track into Web Audio while a media element is also consuming it.
+    const sink = new Audio(); sink.muted = true; sink.srcObject = stream; sink.play().catch(() => {});
+    const node = m.ctx.createMediaStreamSource(stream);
+    node.connect(m.out); node.connect(m.analyser);
+    node.__chitterSink = sink;
+    m.sources.set(track.id, node);
+    track.addEventListener('ended', () => {
+      sink.srcObject = null; node.disconnect(); m.sources.delete(track.id);
+      if (!m.sources.size && pipelines.has('call')) pipelines.get('call').stop();
+    });
+    if (!pipelines.has('call') && !pipelines.has('tab')) pipelines.set('call', new Pipeline('call', m.out.stream.getAudioTracks()[0], 0));
+    refreshStatus();
+  }
+
+  // "Caption this tab": the extension captures whatever the tab plays, so it also covers sites that don't use
+  // WebRTC audio tracks (Zoom in the browser, videos, webinars).
+  const gum = navigator.mediaDevices && navigator.mediaDevices.getUserMedia ? navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices) : null;
+  async function startTabAudio(streamId) {
+    if (pipelines.has('tab') || !gum) return;
+    S.enabled = true;
+    let stream;
+    try { stream = await gum({ audio: { mandatory: { chromeMediaSource: 'tab', chromeMediaSourceId: streamId } } }); }
+    catch (e) { ui.toast('Chitter couldn\'t capture this tab\'s audio: ' + e.message, 'OK'); return; }
+    const m = resumeAudio(), node = m.ctx.createMediaStreamSource(stream);
+    node.connect(m.analyser);
+    node.connect(m.ctx.destination);      // a captured tab goes silent unless we play it back
+    if (m.ctx.state !== 'running') ui.toast('Click once to hear this tab again.', 'Resume sound', () => m.ctx.resume());
+    if (pipelines.has('call')) pipelines.get('call').stop();      // the tab already contains the call
+    const track = stream.getAudioTracks()[0];
+    watch.result();
+    pipelines.set('tab', new Pipeline('tab', track, 0));
+    track.addEventListener('ended', () => { node.disconnect(); if (pipelines.has('tab')) pipelines.get('tab').stop(); });
     refreshStatus();
   }
 
   // Your own microphone: the call's remote tracks only carry the OTHER people, so caption your own track too.
   function onLocalAudio(track) {
-    if (!S.enabled || !S.captionMe || pipelines.has(track.id)) return;
-    pipelines.set(track.id, new Pipeline(track, 24, true));     // shown as speaker "Y" (you)
+    if (!S.enabled || !S.captionMe || pipelines.has('me')) return;
+    pipelines.set('me', new Pipeline('me', track, 24, true));     // shown as speaker "Y" (you)
     refreshStatus();
   }
-  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    const gum = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+  if (gum) {
     navigator.mediaDevices.getUserMedia = async function (constraints) {
       const stream = await gum(constraints);
       try { if (constraints && constraints.audio) stream.getAudioTracks().forEach(onLocalAudio); } catch (e) {}
@@ -345,5 +429,5 @@
 
   console.info('[Chitter] loaded on', location.host, '- waiting for a call');
   toBridge({ type: 'ready' });          // ask bridge.js for the saved settings
-  window.__chitter = { pipelines, lines, dub };   // handy for debugging in DevTools
+  window.__chitter = { pipelines, lines, dub, mixer };   // handy for debugging in DevTools
 })();

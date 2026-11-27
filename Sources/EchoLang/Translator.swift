@@ -13,6 +13,11 @@ public protocol Translator: Sendable {
     func translate(_ text: String, from: String?, to: String) async throws -> String
 }
 
+/// Extra instruction so language-model translators leave the user's names and jargon alone.
+public func keepTermsInstruction(_ terms: [String]) -> String {
+    terms.isEmpty ? "" : " Keep these names and terms exactly as written: " + terms.prefix(50).joined(separator: ", ") + "."
+}
+
 public enum Lang {
     /// "zh-Hans" → "zh", "en_US" → "en"
     public static func base(_ id: String) -> String {
@@ -67,11 +72,12 @@ public struct LLMTranslator: Translator {
     public let name: String
     let endpoint: LLMEndpoint
     let apiKey: @Sendable () -> String?
-    public init(endpoint: LLMEndpoint, apiKey: @escaping @Sendable () -> String?) {
-        self.endpoint = endpoint; self.apiKey = apiKey; self.name = "\(endpoint.name) (LLM)"
+    let keepTerms: [String]
+    public init(endpoint: LLMEndpoint, apiKey: @escaping @Sendable () -> String?, keepTerms: [String] = []) {
+        self.endpoint = endpoint; self.apiKey = apiKey; self.keepTerms = keepTerms; self.name = "\(endpoint.name) (LLM)"
     }
     public func translate(_ text: String, from: String?, to: String) async throws -> String {
-        let sys = "You are a live interpreter. Translate the user's text into \(Lang.displayName(to, in: Locale(identifier: "en"))). Output only the translation, no notes."
+        let sys = "You are a live interpreter. Translate the user's text into \(Lang.displayName(to, in: Locale(identifier: "en"))). Output only the translation, no notes." + keepTermsInstruction(keepTerms)
         let out = try await OpenAIClient.complete(endpoint: endpoint, apiKey: apiKey(),
             messages: [ChatMessage(role: "system", content: sys), ChatMessage(role: "user", content: text)],
             purpose: "Translate subtitle text")
@@ -86,7 +92,7 @@ public actor TranslatorChain {
     private var cache: [String: String] = [:]
     public private(set) var lastUsed: String?
     public init(_ t: [Translator]) { translators = t }
-    public func setTranslators(_ t: [Translator]) { translators = t; coolDown = [:] }
+    public func setTranslators(_ t: [Translator]) { translators = t; coolDown = [:]; cache = [:] }
 
     public func translate(_ text: String, from: String?, to: String) async -> String? {
         if let s = from, Lang.base(s) == Lang.base(to) { return nil }
@@ -114,7 +120,8 @@ import FoundationModels
 @available(macOS 26, *)
 public struct AppleModelTranslator: Translator {
     public let name = "Apple on-device model"
-    public init() {}
+    private let keepTerms: [String]
+    public init(keepTerms: [String] = []) { self.keepTerms = keepTerms }
 
     /// The first call loads the model (~6 s measured); later calls take ~1.1–1.6 s. Call this when a call starts.
     public static func warmUp() async {
@@ -125,7 +132,7 @@ public struct AppleModelTranslator: Translator {
     public func translate(_ text: String, from: String?, to: String) async throws -> String {
         guard SystemLanguageModel.default.availability == .available else { throw TranslationError.unavailable("Apple Intelligence isn't available.") }
         let target = Lang.displayName(to, in: Locale(identifier: "en"))
-        let session = LanguageModelSession(instructions: "You are a live interpreter. Translate the user's text into \(target). Reply with only the translation: no quotes, no notes, no explanation.")
+        let session = LanguageModelSession(instructions: "You are a live interpreter. Translate the user's text into \(target). Reply with only the translation: no quotes, no notes, no explanation." + keepTermsInstruction(keepTerms))
         let out = try await session.respond(to: text, options: GenerationOptions(temperature: 0)).content.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !out.isEmpty else { throw TranslationError.unavailable("Empty translation") }
         return out

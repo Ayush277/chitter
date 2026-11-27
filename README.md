@@ -61,6 +61,10 @@
 <td><b>Pull the Thread</b><br>Hover or focus a note and an animated thread is drawn to its source line, so you can verify the AI instead of trusting it.</td>
 </tr>
 <tr>
+<td><img src="docs/assets/icons/subtitles.svg" width="56" alt=""></td>
+<td><b>Your setup</b> <sub>(Mac app)</sub><br>Live transcript panel (⌃⌥L), show both languages or just one, a word list for names and jargon, notes in your language or the meeting's, hands-free interpreting, and a choice of voice (including your own macOS Personal Voice) and microphone.</td>
+</tr>
+<tr>
 <td><img src="docs/assets/icons/privacy.svg" width="56" alt=""></td>
 <td><b>Privacy Ledger</b><br>A window listing every network request the app makes. Default result: <i>"Nothing left your Mac in this meeting."</i></td>
 </tr>
@@ -72,7 +76,7 @@
 
 <div align="center"><img src="docs/assets/architecture.svg" alt="Chitter architecture diagram" width="100%"></div>
 
-1. **Capture**: the Mac app taps the sound your Mac plays (Core Audio); the Chrome extension takes each participant's audio track from the call's WebRTC connection.
+1. **Capture**: the Mac app taps the sound your Mac plays (Core Audio), so it works with any browser or call app. The Chrome extension merges the call's WebRTC audio into one stream, or captures the whole tab.
 2. **Hear**: on-device speech recognition turns audio into text and detects the language.
 3. **Translate**: Apple's translation, or Apple's on-device language model, translates it.
 4. **Speak and show**: the subtitle ribbon updates and a natural system voice reads the translation.
@@ -95,7 +99,7 @@ Details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 | **Data** | SQLite FTS5 · append-only JSONL logs · plain-file storage | Crash-safe transcripts, misspelling-tolerant search, export |
 | **AI integration** | On-device speech, translation and language models behind interfaces · output validation | See below |
 | **Security and privacy** | Single audited network gateway · Keychain · SHA-256 pinning · least-privilege permissions · Trusted Types compliance | Enforced by tests |
-| **Testing** | 48 unit tests · 13 browser checks · WebRTC loopback test · rule tests · benchmarks · 30-minute soak | `Tests/`, `extension/test/`, `scripts/` |
+| **Testing** | 58 unit tests · 16 browser checks · WebRTC loopback test · rule tests · benchmarks · 30-minute soak | `Tests/`, `extension/test/`, `scripts/` |
 | **Delivery** | Shell packaging (DMG, ZIP, checksums) · Homebrew cask template · CI workflow definitions | `scripts/`, `docs/github-workflows/` |
 | **Front end and UX** | SwiftUI · AppKit · accessibility (contrast, keyboard, screen-reader labels) · localisation scaffold | Desktop UI, overlay, website |
 | **Third-party code** | WhisperKit (speech recognition library) | `EchoASR` |
@@ -133,6 +137,9 @@ open build/Chitter.app      # first time: right-click → Open (the app is not n
 
 Click the menu-bar icon → **Try the sample meeting** to see everything work without a call. For real calls allow **System Audio Recording** and **Microphone** when asked. Needs macOS 14.4+; Apple's on-device translation and notes models need macOS 26 with Apple Intelligence.
 
+### Which one should I use?
+**On a Mac, use the Mac app.** It listens to what the Mac plays, so Meet, Zoom, Teams and every other app or browser look the same to it. The extension is for Windows, Linux and ChromeOS.
+
 ### Chrome extension (Windows, Linux, ChromeOS, Mac)
 
 1. Open `chrome://extensions` and switch on **Developer mode**.
@@ -153,6 +160,7 @@ Measured on one Mac (Apple silicon, macOS 27.0.1) with `scripts/bench.sh`, 2026-
 
 | Check | Result |
 |---|---|
+| Live system audio → subtitles (2026-11-27) | German, Chinese, French: detected, transcribed and translated; translation 2.0–3.4 s after each recognised line |
 | Speech accuracy, 11.5 s English test clip | 2.6% word error rate (Apple and WhisperKit base) |
 | First subtitle after speech starts | Apple 4.1 s (arrives in sentence bursts) · WhisperKit 2.0 s |
 | Foreign speech → English voice, warm model, 6–8 s clips | Chinese, Japanese, French, Spanish: 3.8–6.2 s to the end of the spoken translation |
@@ -162,7 +170,7 @@ Measured on one Mac (Apple silicon, macOS 27.0.1) with `scripts/bench.sh`, 2026-
 
 > [!WARNING]
 > **Honest status.** The soak's low CPU and memory cover Chitter's own process only, not Apple's separate speech process. The 1.5 s first-subtitle and 4 s interpreter targets are **not met**.
-> **Not yet verified:** live capture of real call audio on the Mac app, auto-start in a real call, the microphone → virtual-mic interpreter, and the Chrome extension in a real call after the latest fix. Unit tests, a WebRTC loopback test and real runs of the speech, translation, notes and voice steps pass. See [`docs/PROGRESS.md`](docs/PROGRESS.md) for every check.
+> **Not yet verified:** a real call with another person, auto-start during a real call, speaking into a call with a real microphone (hold-to-talk or hands-free), Personal Voice, and the Chrome extension loaded in a browser. Audio played on the Mac has been run through the whole app. See [`docs/PROGRESS.md`](docs/PROGRESS.md) for every check.
 
 ---
 
@@ -171,7 +179,7 @@ Measured on one Mac (Apple silicon, macOS 27.0.1) with `scripts/bench.sh`, 2026-
 ```text
 chitter/
 ├── Sources/            Mac app: EchoCore · EchoAudio · EchoASR · EchoLang · EchoNotes · EchoVoice · EchoNet · EchoUI · EchoApp
-├── Tests/              Swift tests (48)
+├── Tests/              Swift tests (58)
 ├── extension/          Chrome extension (Manifest V3) + browser tests
 ├── site/               The website (GitHub Pages)
 ├── video/              Scripts that render the showcase and explainer videos

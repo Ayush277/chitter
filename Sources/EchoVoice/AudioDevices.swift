@@ -26,6 +26,26 @@ public enum AudioDevices {
         return AudioObjectGetPropertyDataSize(id, &a, 0, nil, &size) == noErr && size > 0
     }
 
+    public static func uid(_ id: AudioDeviceID) -> String {
+        var a = addr(kAudioDevicePropertyDeviceUID); var s: CFString = "" as CFString; var size = UInt32(MemoryLayout<CFString>.size)
+        let r = withUnsafeMutablePointer(to: &s) { AudioObjectGetPropertyData(id, &a, 0, nil, &size, $0) }
+        return r == noErr ? s as String : ""
+    }
+    /// Real microphones the user can choose (virtual loopback and Chitter's own aggregate are left out).
+    public static func microphones() -> [(uid: String, name: String)] {
+        all().filter { $0.hasInput && !isLoopback($0.name) }.map { (uid($0.id), $0.name) }
+    }
+    static func isLoopback(_ name: String) -> Bool { name.localizedCaseInsensitiveContains("BlackHole") || name.hasPrefix("Chitter") }
+
+    /// Which device to record from: the chosen one, else the system default, but never the loopback driver
+    /// (recording BlackHole would capture silence or Chitter's own voice).
+    public static func recordingDevice(preferredUID: String, devices: [AudioDevice], uidOf: (AudioDeviceID) -> String, systemDefault: AudioDeviceID?) -> AudioDeviceID? {
+        let inputs = devices.filter(\.hasInput)
+        if !preferredUID.isEmpty, let d = inputs.first(where: { uidOf($0.id) == preferredUID }) { return d.id }
+        if let s = systemDefault, let d = inputs.first(where: { $0.id == s }), !isLoopback(d.name) { return nil }
+        return inputs.first { !isLoopback($0.name) }?.id
+    }
+
     public static func blackHole() -> AudioDevice? { all().first { $0.name.localizedCaseInsensitiveContains("BlackHole") && $0.hasInput && $0.hasOutput } }
 
     public static func defaultInput() -> AudioDeviceID? { get(kAudioHardwarePropertyDefaultInputDevice) }

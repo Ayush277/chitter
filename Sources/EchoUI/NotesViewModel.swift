@@ -16,6 +16,7 @@ public final class NotesViewModel: ObservableObject {
     @Published public var isGenerating = false
     @Published public var engineName = ""
     @Published public var accessibilityMode = false
+    @Published public var transcriptMode: SubtitleMode = .both
     @Published var threadProgress: CGFloat = 1
 
     public let store: MeetingStore
